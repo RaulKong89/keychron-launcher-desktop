@@ -1,0 +1,15 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Keychron Launcher
+GenericName=Keyboard Configurator
+Comment=Configure and customize your Keychron keyboard
+Comment[ro]=Configurează și personalizează tastatura ta Keychron
+Exec=keychron-launcher
+Icon=keychron-launcher
+Terminal=false
+Categories=Utility;HardwareSettings;GTK;
+Keywords=keychron;keyboard;launcher;configurator;tastatura;clavier;
+StartupNotify=true
+StartupWMClass=keychron-launcher
+X-GNOME-UsesNotifications=false

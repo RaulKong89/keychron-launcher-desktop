@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>launcher.keychron.desktop</id>
+  <name>Keychron Launcher</name>
+  <summary>Configure Keychron keyboards</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+  <description>
+    <p>
+      Dedicated app window for the official Keychron Launcher with full
+      WebHID support. No browser tabs, no address bar. One native window,
+      one app entry. Ships with udev rules that grant access to Keychron
+      keyboards, mice and 2.4G receivers for remapping, lighting and
+      firmware updates.
+    </p>
+    <p xml:lang="ro">
+      Fereastră dedicată pentru aplicația oficială Keychron Launcher, cu
+      suport WebHID complet. Fără tab-uri de browser, fără bară de adrese.
+      O singură fereastră nativă, o singură intrare în lista de aplicații.
+      Include reguli udev care acordă acces la tastaturi, mousuri și
+      receptoare 2.4G Keychron pentru remapare, iluminare și actualizări
+      de firmware.
+    </p>
+  </description>
+  <launchable type="desktop-id">keychron-launcher.desktop</launchable>
+  <url type="homepage">https://launcher.keychron.com/</url>
+  <provides>
+    <binary>keychron-launcher</binary>
+  </provides>
+  <content_rating type="oars-1.1"/>
+</component>
