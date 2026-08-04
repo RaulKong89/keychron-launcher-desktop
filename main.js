@@ -105,6 +105,47 @@ app.whenReady().then(() => {
     }
   });
 
+  // Grants HID access straight away for any device this app can see, so the
+  // page never has to show a prompt or wait on one. This is what lets an
+  // already-known keyboard, or the different device the keyboard becomes
+  // once it reboots into its firmware-update bootloader, connect the moment
+  // it's plugged in.
+  ses.setDevicePermissionHandler(
+    (details) => details.deviceType === 'hid' && details.origin === ALLOWED_ORIGIN
+  );
+
+  // Belt and suspenders: Electron has no built-in HID chooser UI (unlike
+  // Chrome, which shows one natively), so if navigator.hid.requestDevice()
+  // ever does reach this event instead of being pre-granted above, resolving
+  // it ourselves is the only way to avoid leaving it hanging on the page.
+  // Since this app only ever talks to one kind of device, it auto-picks
+  // rather than asking the user to choose. If the list is empty when the
+  // request comes in, which happens during a firmware update when the
+  // keyboard drops off USB and re-enumerates under a different VID/PID once
+  // it reboots into its bootloader, it waits for hid-device-added instead of
+  // failing immediately.
+  ses.on('select-hid-device', (event, details, callback) => {
+    event.preventDefault();
+
+    if (details.deviceList.length > 0) {
+      callback(details.deviceList[0].deviceId);
+      return;
+    }
+
+    const timeout = setTimeout(() => {
+      ses.removeListener('hid-device-added', onDeviceAdded);
+      callback('');
+    }, 20000);
+
+    const onDeviceAdded = (_event, device) => {
+      clearTimeout(timeout);
+      ses.removeListener('hid-device-added', onDeviceAdded);
+      callback(device.deviceId);
+    };
+
+    ses.on('hid-device-added', onDeviceAdded);
+  });
+
   ses.on('will-download', (event, item, webContents) => {
     const win = BrowserWindow.getFocusedWindow() || BrowserWindow.getAllWindows()[0];
     const defaultPath = path.join(app.getPath('downloads'), item.getFilename());
