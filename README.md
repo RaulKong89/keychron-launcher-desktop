@@ -32,7 +32,7 @@ This wrapper trades away the extra features a firmware fork can offer for someth
 
 - `main.js`: the Electron main process. Single `BrowserWindow`, sandboxed, `contextIsolation` on, `nodeIntegration` off. WebHID permission handlers scoped to the Keychron origin. A native "Save As" dialog and completion notification for downloads (firmware files, etc).
 - `assets/`: app icon (PNG, ICO, ICNS, and the source SVG).
-- `99-keychron.rules`: udev rule covering Keychron's USB vendor ID (`3434`), the STM32 firmware bootloader (`0483:df11`), and the Keychron Link 2.4G receiver (`3434:0d30`).
+- `99-keychron.rules`: udev rule covering Keychron's USB vendor ID (`3434`, every keyboard and mouse they make), the STM32 firmware bootloader (`0483:df11`), and both Keychron Link 2.4G receivers, USB-A (`3434:0d30`) and USB-C (`3434:0d31`).
 - `keychron-launcher.desktop` / `keychron-launcher.metainfo.xml`: Linux desktop entry and AppStream metadata.
 - `package.json`: electron-builder config that produces `.deb`, `.rpm`, and Arch `.pkg.tar.zst` packages on Linux, an NSIS installer on Windows, and an `.app` bundle on macOS.
 

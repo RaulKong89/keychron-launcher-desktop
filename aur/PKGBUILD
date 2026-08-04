@@ -1,0 +1,30 @@
+# Maintainer: Raul Kong Popescu <121046976+RaulKong898@users.noreply.github.com>
+pkgname=keychron-launcher
+pkgver=1.0.1
+pkgrel=1
+pkgdesc="Unofficial native desktop wrapper for the Keychron Launcher web app (launcher.keychron.com), with WebHID support"
+arch=('any')
+url="https://github.com/RaulKong898/keychron-launcher-desktop"
+license=('MIT')
+depends=('electron')
+optdepends=('dfu-util: manual firmware flashing in bootloader mode')
+source=("$pkgname-$pkgver.tar.gz::https://github.com/RaulKong898/keychron-launcher-desktop/archive/refs/tags/v$pkgver.tar.gz")
+sha256sums=('SKIP')
+
+package() {
+  cd "keychron-launcher-desktop-$pkgver"
+
+  install -Dm644 main.js "$pkgdir/usr/lib/keychron-launcher/main.js"
+  install -Dm644 package.json "$pkgdir/usr/lib/keychron-launcher/package.json"
+
+  install -Dm755 /dev/stdin "$pkgdir/usr/bin/keychron-launcher" <<'WRAPPER'
+#!/bin/sh
+exec electron /usr/lib/keychron-launcher "$@"
+WRAPPER
+
+  install -Dm644 assets/icon.png "$pkgdir/usr/share/icons/hicolor/512x512/apps/keychron-launcher.png"
+  install -Dm644 keychron-launcher.desktop "$pkgdir/usr/share/applications/keychron-launcher.desktop"
+  install -Dm644 keychron-launcher.metainfo.xml "$pkgdir/usr/share/metainfo/keychron-launcher.metainfo.xml"
+  install -Dm644 99-keychron.rules "$pkgdir/usr/lib/udev/rules.d/99-keychron.rules"
+  install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}
