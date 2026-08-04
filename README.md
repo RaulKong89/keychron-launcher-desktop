@@ -16,6 +16,18 @@ So a native-feeling app that can actually connect to a keyboard has to embed Chr
 
 On Linux there is a second problem: Linux blocks unprivileged access to `/dev/hidraw` by default. This project ships a udev rule for Keychron's USB vendor ID that fixes that on install, so users are not stuck writing their own rules (which is what people have been doing manually on forums and in blog posts for a while now).
 
+## Compared to other Keychron Launcher projects
+
+A few other people have built something similar. Worth knowing how this one differs, and why, before picking one.
+
+**[Tymon3310/keychron-vial](https://github.com/tymon3310/keychron-vial)** (vial-qmk fork, Pipette/vial-gui desktop apps) has more features where it applies: full Vial protocol, SOCD, gamepad mode, wireless bridge, per-key RGB tuning beyond what stock Launcher exposes. It requires flashing custom firmware onto the keyboard, and only works for keyboards it has a board definition for. As of this writing that covers the Q, Q HE, K Pro/Max/HE, V, C Pro, S/X, and Lemokey series, but nothing in the J series (J2, J2 HE, J2 HE 8K, J8 HE). This wrapper never touches the keyboard's firmware. It runs the official Launcher, so it works with whatever stock firmware a keyboard shipped with, including boards too new for anyone to have reverse-engineered yet.
+
+**[ArtCC/keychron-launcher-wrapper](https://github.com/ArtCC/keychron-launcher-wrapper)** is the same basic idea, an Electron shell around the official Launcher site, but it's built and distributed primarily for macOS. Its own README notes Windows and Linux support "may vary by OS/runtime support," and it doesn't ship a udev rule or distro packages. This project targets Linux first: real `.deb`/`.rpm`/`.pkg.tar.zst` packages with proper dependency declarations, a udev rule covering the vendor ID plus the bootloader and 2.4G receiver IDs, and Windows/macOS builds on top of that.
+
+**[StefanMarAntonsson/keychron-launcher-arch-guide](https://github.com/StefanMarAntonsson/keychron-launcher-arch-guide)** is a script, not an app. It scans connected USB devices and generates the matching udev rules, which is useful, but you still open the Launcher as a regular tab in your own Chromium install, and it only targets Arch. This project is a standalone application with its own icon and its own entry in the app menu, packaged for the Debian, Fedora, and Arch families plus Windows and macOS.
+
+This wrapper trades away the extra features a firmware fork can offer for something that works, unmodified, with any Keychron keyboard from day one, without touching the firmware.
+
 ## What is included
 
 - `main.js`: the Electron main process. Single `BrowserWindow`, sandboxed, `contextIsolation` on, `nodeIntegration` off. WebHID permission handlers scoped to the Keychron origin. A native "Save As" dialog and completion notification for downloads (firmware files, etc).
@@ -90,6 +102,16 @@ Wrapper desktop nativ pentru [Keychron Launcher](https://launcher.keychron.com/)
 Motivul tehnic: Launcherul are nevoie de WebHID ca să vorbească cu tastatura prin USB, iar WebHID există doar în motoarele bazate pe Chromium (Chrome, Edge, Electron). Nici WebKit, nici Firefox nu îl suportă. De-aici vine alegerea de a folosi Electron, dar ascuns complet: fără tab-uri, fără bară de adrese, o singură fereastră, permisiuni WebHID limitate strict la `launcher.keychron.com`.
 
 Pe Linux mai există regula udev inclusă, care dă acces la tastaturile Keychron fără configurare manuală.
+
+### Față de alte proiecte similare
+
+**[Tymon3310/keychron-vial](https://github.com/tymon3310/keychron-vial)** (fork vial-qmk, aplicații desktop Pipette/vial-gui) are mai multe funcții acolo unde se aplică: protocol Vial complet, SOCD, mod gamepad, punte wireless, RGB per-tastă dincolo de ce oferă Launcherul oficial. Prețul e că cere reflashuirea firmware-ului tastaturii, și funcționează doar pentru board-urile pentru care are definiție scrisă. La data asta acoperă seriile Q, Q HE, K Pro/Max/HE, V, C Pro, S/X și Lemokey, dar nimic din seria J (J2, J2 HE, J2 HE 8K, J8 HE). Wrapper-ul de aici nu atinge firmware-ul tastaturii. Rulează Launcherul oficial, deci merge cu orice firmware din fabrică, inclusiv pe tastaturi atât de noi încât nimeni din comunitate nu a apucat să le suporte.
+
+**[ArtCC/keychron-launcher-wrapper](https://github.com/ArtCC/keychron-launcher-wrapper)** e aceeași idee de bază, un shell Electron peste site-ul oficial, dar construit și distribuit în primul rând pentru macOS. Chiar README-ul lor spune că suportul Windows și Linux "poate varia în funcție de sistem", fără regulă udev inclusă și fără pachete pentru distribuții Linux. Proiectul de aici țintește Linux întâi: pachete reale `.deb`/`.rpm`/`.pkg.tar.zst` cu dependențe corecte, regulă udev care acoperă vendor ID-ul plus bootloader-ul și receiverul 2.4G, și build-uri Windows/macOS pe lângă.
+
+**[StefanMarAntonsson/keychron-launcher-arch-guide](https://github.com/StefanMarAntonsson/keychron-launcher-arch-guide)** e un script, nu o aplicație. Scanează dispozitivele USB conectate și generează regulile udev potrivite, util, dar tot deschizi Launcherul într-un tab obișnuit din propriul Chromium, și acoperă doar Arch. Proiectul de aici e o aplicație de sine stătătoare, cu iconița ei și intrare proprie în meniul de aplicații, împachetată pentru familiile Debian, Fedora și Arch, plus Windows și macOS.
+
+Wrapper-ul ăsta renunță la funcțiile în plus pe care le poate oferi un fork de firmware, în schimbul a ceva ce merge, nemodificat, cu orice tastatură Keychron din prima zi, fără să atingă firmware-ul.
 
 Instalatoarele sunt atașate la [ultimul release](../../releases/latest), câte unul pentru fiecare familie de distribuții, plus Windows și macOS (Intel și Apple Silicon separat). Instrucțiunile de instalare sunt mai sus, în engleză, dar comenzile sunt aceleași indiferent de limbă.
 
