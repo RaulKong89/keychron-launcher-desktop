@@ -46,7 +46,6 @@ function createWindow() {
     minHeight: 640,
     title: 'Keychron Launcher',
     backgroundColor: '#111111',
-    autoHideMenuBar: true,
     icon: APP_ICON,
     webPreferences: {
       contextIsolation: true,

@@ -1,7 +1,7 @@
 {
   "name": "keychron-launcher",
   "productName": "Keychron Launcher",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Unofficial native desktop wrapper for the Keychron Launcher web app (launcher.keychron.com), with WebHID support, for Linux, Windows, and macOS",
   "main": "main.js",
   "license": "MIT",
