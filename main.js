@@ -70,14 +70,18 @@ function createWindow() {
     if (win.webContents.getURL().startsWith('data:')) win.loadURL(APP_URL);
   });
 
-  // Force-close instead of the default graceful teardown. The site itself
-  // does WebHID cleanup on unload, which can take a few seconds once a
-  // keyboard is actively connected, and that's what made the window feel
-  // slow to close. destroy() skips waiting on that.
+  // Hide first, so the window visibly disappears the instant close is
+  // requested, then tear the rest down right after. destroy() alone still
+  // waited on the compositor to finish the forced teardown before the
+  // window vanished from screen; hiding is a plain unmap and happens
+  // immediately, regardless of what the page's WebHID cleanup is doing.
   win.on('close', (event) => {
     if (win.isDestroyed()) return;
     event.preventDefault();
-    win.destroy();
+    win.hide();
+    setImmediate(() => {
+      if (!win.isDestroyed()) win.destroy();
+    });
   });
 
   win.loadURL(SPLASH_URL);
