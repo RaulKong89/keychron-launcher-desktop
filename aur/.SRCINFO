@@ -1,13 +1,13 @@
 pkgbase = keychron-launcher
 	pkgdesc = Unofficial native desktop wrapper for the Keychron Launcher web app (launcher.keychron.com), with WebHID support
-	pkgver = 1.0.1
+	pkgver = 1.0.2
 	pkgrel = 1
 	url = https://github.com/RaulKong898/keychron-launcher-desktop
 	arch = any
 	license = MIT
 	depends = electron
 	optdepends = dfu-util: manual firmware flashing in bootloader mode
-	source = keychron-launcher-1.0.1.tar.gz::https://github.com/RaulKong898/keychron-launcher-desktop/archive/refs/tags/v1.0.1.tar.gz
-	sha256sums = 15a99e4cc46b079f14cadb3bddf41dd4f731cbbc4beaf27274a74cfad50a50ae
+	source = keychron-launcher-1.0.2.tar.gz::https://github.com/RaulKong898/keychron-launcher-desktop/archive/refs/tags/v1.0.2.tar.gz
+	sha256sums = 05c09b0891d2e706bce1e13cba90955ddf86c69f4f2a4f843dd2153bb312c95d
 
 pkgname = keychron-launcher

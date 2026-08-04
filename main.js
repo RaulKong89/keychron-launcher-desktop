@@ -18,11 +18,25 @@ if (process.platform === 'win32') app.setAppUserModelId('com.keychron.launcher')
 
 const isAllowed = (url) => {
   try {
-    return new URL(url).host === ALLOWED_HOST;
+    const parsed = new URL(url);
+    return parsed.protocol === 'data:' || parsed.host === ALLOWED_HOST;
   } catch {
     return false;
   }
 };
+
+// A tiny local splash, so something appears the instant the window opens
+// instead of a blank dark rectangle while launcher.keychron.com loads over
+// the network. Swapped out for the real site as soon as it's requested.
+const SPLASH_URL = `data:text/html;charset=utf-8,${encodeURIComponent(`<!DOCTYPE html>
+<html><head><style>
+  html, body { height: 100%; margin: 0; background: #111111; }
+  body { display: flex; align-items: center; justify-content: center; font-family: sans-serif; color: #888; }
+  .wrap { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .spinner { width: 32px; height: 32px; border: 3px solid #333; border-top-color: #888; border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style></head>
+<body><div class="wrap"><div class="spinner"></div><div>Loading Keychron Launcher…</div></div></body></html>`)}`;
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -52,7 +66,21 @@ function createWindow() {
     if (!isAllowed(url)) event.preventDefault();
   });
 
-  win.loadURL(APP_URL);
+  win.webContents.once('did-finish-load', () => {
+    if (win.webContents.getURL().startsWith('data:')) win.loadURL(APP_URL);
+  });
+
+  // Force-close instead of the default graceful teardown. The site itself
+  // does WebHID cleanup on unload, which can take a few seconds once a
+  // keyboard is actively connected, and that's what made the window feel
+  // slow to close. destroy() skips waiting on that.
+  win.on('close', (event) => {
+    if (win.isDestroyed()) return;
+    event.preventDefault();
+    win.destroy();
+  });
+
+  win.loadURL(SPLASH_URL);
   return win;
 }
 
