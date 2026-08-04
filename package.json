@@ -1,7 +1,7 @@
 {
   "name": "keychron-launcher",
   "productName": "Keychron Launcher",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Unofficial native desktop wrapper for the Keychron Launcher web app (launcher.keychron.com), with WebHID support, for Linux, Windows, and macOS",
   "main": "main.js",
   "license": "MIT",
@@ -62,7 +62,17 @@
         "libatspi2.0-0",
         "libnotify4",
         "xdg-utils"
-      ]
+      ],
+      "afterInstall": "build/linux-after-install.sh",
+      "afterRemove": "build/linux-after-remove.sh"
+    },
+    "rpm": {
+      "afterInstall": "build/linux-after-install.sh",
+      "afterRemove": "build/linux-after-remove.sh"
+    },
+    "pacman": {
+      "afterInstall": "build/linux-after-install.sh",
+      "afterRemove": "build/linux-after-remove.sh"
     },
     "win": {
       "target": [
