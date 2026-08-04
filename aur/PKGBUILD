@@ -1,6 +1,6 @@
 # Maintainer: Raul Kong Popescu <121046976+RaulKong898@users.noreply.github.com>
 pkgname=keychron-launcher
-pkgver=1.0.1
+pkgver=1.0.2
 pkgrel=1
 pkgdesc="Unofficial native desktop wrapper for the Keychron Launcher web app (launcher.keychron.com), with WebHID support"
 arch=('any')
