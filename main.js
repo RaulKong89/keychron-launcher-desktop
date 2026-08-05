@@ -2,7 +2,6 @@
 
 const { app, BrowserWindow, session, Menu, shell, dialog, Notification } = require('electron');
 const path = require('path');
-const { exec } = require('child_process');
 
 const APP_URL = 'https://launcher.keychron.com/';
 const ALLOWED_HOST = 'launcher.keychron.com';
@@ -86,38 +85,6 @@ function createWindow() {
 
   win.loadURL(SPLASH_URL);
   return win;
-}
-
-// OpenRGB and this app's Launcher both talk to the keyboard over the same
-// VIA-based raw HID channel: OpenRGB for lighting, the Launcher for
-// everything else (remaps, macros, HE actuation). The OS lets both hold the
-// device open at once, so this is informational only; it never touches the
-// OpenRGB process or blocks anything. Firmware updates aren't affected
-// either way, since the keyboard drops off as a HID device and
-// re-enumerates on a separate bootloader interface while flashing.
-function notifyIfOpenRGBRunning() {
-  if (!Notification.isSupported()) return;
-
-  const checkCommand =
-    process.platform === 'win32'
-      ? 'tasklist /FI "IMAGENAME eq OpenRGB.exe"'
-      : 'pgrep -ix openrgb';
-
-  exec(checkCommand, (error, stdout) => {
-    const running =
-      !error &&
-      (process.platform === 'win32'
-        ? /OpenRGB\.exe/i.test(stdout)
-        : stdout.trim().length > 0);
-
-    if (!running) return;
-
-    new Notification({
-      title: 'OpenRGB detected',
-      body:
-        "OpenRGB is running and shares this keyboard's configuration channel with the Launcher. Lighting and Launcher changes can run side by side, and firmware updates aren't affected since the keyboard switches to a separate interface while flashing.",
-    }).show();
-  });
 }
 
 app.whenReady().then(() => {
@@ -207,7 +174,6 @@ app.whenReady().then(() => {
   });
 
   createWindow();
-  notifyIfOpenRGBRunning();
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
