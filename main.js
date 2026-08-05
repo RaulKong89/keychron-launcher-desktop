@@ -2,6 +2,9 @@
 
 const { app, BrowserWindow, session, Menu, shell, dialog, Notification } = require('electron');
 const path = require('path');
+const fs = require('fs');
+const os = require('os');
+const { exec } = require('child_process');
 
 const APP_URL = 'https://launcher.keychron.com/';
 const ALLOWED_HOST = 'launcher.keychron.com';
@@ -87,7 +90,73 @@ function createWindow() {
   return win;
 }
 
+// The .deb/.rpm/.pacman postinstall scripts write this same rule at package-
+// install time, but that only runs once, at whatever moment the package
+// manager happens to invoke it. Checking it again on every launch, and
+// rewriting it if it's missing or stale, means the rule survives even if
+// something outside this app's control (an interrupted upgrade, a manual
+// edit, an unrelated package touching the same file) leaves it gone.
+const LINUX_UDEV_RULE_PATH = '/usr/lib/udev/rules.d/99-keychron.rules';
+const LINUX_UDEV_RULE_CONTENTS = `# Keychron Launcher WebHID permissions
+# Grants userspace access to /dev/hidraw for all Keychron devices
+# (keyboards, mice, 2.4G receivers) and the STM32 bootloader used for
+# firmware flashing.
+
+# Keychron devices: keyboards, mice, 2.4G receivers (vendor 0x3434)
+KERNEL=="hidraw*", SUBSYSTEM=="hidraw", ATTRS{idVendor}=="3434", MODE="0666", GROUP="users", TAG+="uaccess", TAG+="udev-acl"
+
+# STM32 bootloader mode (firmware flashing)
+SUBSYSTEM=="usb", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="df11", MODE="0666", GROUP="users", TAG+="uaccess", TAG+="udev-acl"
+
+# Keychron Link 2.4G receiver, USB-A dongle
+SUBSYSTEM=="usb", ATTRS{idVendor}=="3434", ATTRS{idProduct}=="0d30", MODE="0666", GROUP="users", TAG+="uaccess", TAG+="udev-acl"
+
+# Keychron Link 2.4G receiver, USB-C dongle
+SUBSYSTEM=="usb", ATTRS{idVendor}=="3434", ATTRS{idProduct}=="0d31", MODE="0666", GROUP="users", TAG+="uaccess", TAG+="udev-acl"
+`;
+
+function ensureLinuxUdevRule() {
+  if (process.platform !== 'linux') return;
+
+  let current = null;
+  try {
+    current = fs.readFileSync(LINUX_UDEV_RULE_PATH, 'utf8');
+  } catch {
+    current = null;
+  }
+
+  if (current === LINUX_UDEV_RULE_CONTENTS) return;
+
+  const stagedPath = path.join(os.tmpdir(), 'keychron-launcher-99-keychron.rules');
+
+  try {
+    fs.writeFileSync(stagedPath, LINUX_UDEV_RULE_CONTENTS);
+  } catch {
+    return;
+  }
+
+  const restoreCommand = [
+    `cp ${JSON.stringify(stagedPath)} ${JSON.stringify(LINUX_UDEV_RULE_PATH)}`,
+    `chmod 644 ${JSON.stringify(LINUX_UDEV_RULE_PATH)}`,
+    'udevadm control --reload-rules',
+    'udevadm trigger',
+  ].join(' && ');
+
+  // Only prompts for a password when the rule actually needs restoring, not
+  // on every launch, since the read above is what decides whether this runs
+  // at all.
+  exec(`pkexec sh -c ${JSON.stringify(restoreCommand)}`, () => {
+    try {
+      fs.unlinkSync(stagedPath);
+    } catch {
+      // Leftover temp file, harmless either way.
+    }
+  });
+}
+
 app.whenReady().then(() => {
+  ensureLinuxUdevRule();
+
   Menu.setApplicationMenu(null);
 
   const ses = session.defaultSession;
