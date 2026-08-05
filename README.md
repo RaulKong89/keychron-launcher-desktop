@@ -33,7 +33,7 @@ This wrapper trades away the extra features a firmware fork can offer for someth
 - `main.js`: the Electron main process. Single `BrowserWindow`, sandboxed, `contextIsolation` on, `nodeIntegration` off. WebHID permission handlers scoped to the Keychron origin. A native "Save As" dialog and completion notification for downloads (firmware files, etc).
 - `assets/`: app icon (PNG, ICO, ICNS, and the source SVG).
 - `99-keychron.rules`: udev rule covering Keychron's USB vendor ID (`3434`, every keyboard and mouse they make), the STM32 firmware bootloader (`0483:df11`), and both Keychron Link 2.4G receivers, USB-A (`3434:0d30`) and USB-C (`3434:0d31`). Used directly by the AUR package; `.deb`/`.rpm`/`.pacman` get the same rule from `build/linux-after-install.sh` below, since those formats don't install arbitrary files outside the app directory on their own.
-- `build/linux-after-install.sh` / `build/linux-after-remove.sh`: postinst/postrm scripts (wired up as `afterInstall`/`afterRemove` for the `deb`, `rpm`, and `pacman` targets) that write the udev rule to `/usr/lib/udev/rules.d/`, reload udev, and reset the rule file's SELinux context with `restorecon` on SELinux-enforcing distros like Fedora. A file dropped in by a postinst script rather than the RPM database can otherwise get the wrong label and get silently ignored.
+- `build/linux-after-install.sh` / `build/linux-after-remove.sh`: postinst/postrm scripts (wired up as `afterInstall`/`afterRemove` for the `deb`, `rpm`, and `pacman` targets) that write the udev rule to `/usr/lib/udev/rules.d/`, reload udev, and reset the rule file's SELinux context with `restorecon` on SELinux-enforcing distros like Fedora. A file dropped in by a postinst script rather than the RPM database can otherwise get the wrong label and get silently ignored. On Linux, `main.js` also checks this same rule against its expected contents on every launch and rewrites it via `pkexec` if it's missing or changed, since the postinstall script only runs once and has no way to react to the file being altered or removed afterward.
 - `keychron-launcher.desktop` / `keychron-launcher.metainfo.xml`: Linux desktop entry and AppStream metadata.
 - `package.json`: electron-builder config that produces `.deb`, `.rpm`, and Arch `.pacman` packages on Linux, an NSIS installer on Windows, and an `.app` bundle on macOS.
 
@@ -110,7 +110,7 @@ Wrapper desktop nativ pentru [Keychron Launcher](https://launcher.keychron.com/)
 
 Motivul tehnic: Launcherul are nevoie de WebHID ca să vorbească cu tastatura prin USB, iar WebHID există doar în motoarele bazate pe Chromium (Chrome, Edge, Electron). Nici WebKit, nici Firefox nu îl suportă. De-aici vine alegerea de a folosi Electron, dar ascuns complet: fără tab-uri, fără bară de adrese, o singură fereastră, permisiuni WebHID limitate strict la `launcher.keychron.com`.
 
-Pe Linux mai există regula udev inclusă, care dă acces la tastaturile Keychron fără configurare manuală.
+Pe Linux mai există regula udev inclusă, care dă acces la tastaturile Keychron fără configurare manuală. Aplicația verifică regula la fiecare pornire și o rescrie singură prin `pkexec` dacă lipsește sau s-a schimbat, nu doar la instalare.
 
 ### Față de alte proiecte similare
 
