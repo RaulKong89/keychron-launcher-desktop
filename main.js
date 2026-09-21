@@ -1,10 +1,11 @@
 'use strict';
 
-const { app, BrowserWindow, session, Menu, shell, dialog, Notification } = require('electron');
+const { app, BrowserWindow, session, Menu, shell, dialog, Notification, screen } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
-const { exec } = require('child_process');
+const { restoreBounds, readState, saveState } = require('./window-state');
+const { execFile } = require('child_process');
 
 const APP_URL = 'https://launcher.keychron.com/';
 const ALLOWED_HOST = 'launcher.keychron.com';
@@ -42,11 +43,10 @@ const SPLASH_URL = `data:text/html;charset=utf-8,${encodeURIComponent(`<!DOCTYPE
 <body><div class="wrap"><div class="spinner"></div><div>Loading Keychron Launcher…</div></div></body></html>`)}`;
 
 function createWindow() {
+  const stateFile = path.join(app.getPath('userData'), 'window-state.json');
+  const saved = readState(stateFile);
   const win = new BrowserWindow({
-    width: 1360,
-    height: 860,
-    minWidth: 960,
-    minHeight: 640,
+    ...restoreBounds(saved.bounds, screen.getAllDisplays(), screen.getPrimaryDisplay()),
     title: 'Keychron Launcher',
     backgroundColor: '#111111',
     icon: APP_ICON,
@@ -57,6 +57,26 @@ function createWindow() {
       spellcheck: false,
     },
   });
+
+  if (saved.maximized === true) win.maximize();
+  if (saved.fullScreen === true) win.setFullScreen(true);
+
+  let saveTimer;
+  const persist = () => {
+    clearTimeout(saveTimer);
+    if (!win.isDestroyed()) saveState(stateFile, {
+      bounds: win.getNormalBounds(),
+      maximized: win.isMaximized(),
+      fullScreen: win.isFullScreen(),
+    });
+  };
+  for (const event of ['resize', 'move', 'maximize', 'unmaximize', 'enter-full-screen', 'leave-full-screen']) {
+    win.on(event, () => {
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(persist, 250);
+    });
+  }
+  win.on('closed', () => clearTimeout(saveTimer));
 
   win.webContents.setWindowOpenHandler(({ url }) => {
     if (isAllowed(url)) return { action: 'allow' };
@@ -80,6 +100,7 @@ function createWindow() {
   win.on('close', (event) => {
     if (win.isDestroyed()) return;
     event.preventDefault();
+    persist();
     win.hide();
     setImmediate(() => {
       if (!win.isDestroyed()) win.destroy();
@@ -97,23 +118,7 @@ function createWindow() {
 // something outside this app's control (an interrupted upgrade, a manual
 // edit, an unrelated package touching the same file) leaves it gone.
 const LINUX_UDEV_RULE_PATH = '/usr/lib/udev/rules.d/99-keychron.rules';
-const LINUX_UDEV_RULE_CONTENTS = `# Keychron Launcher WebHID permissions
-# Grants userspace access to /dev/hidraw for all Keychron devices
-# (keyboards, mice, 2.4G receivers) and the STM32 bootloader used for
-# firmware flashing.
-
-# Keychron devices: keyboards, mice, 2.4G receivers (vendor 0x3434)
-KERNEL=="hidraw*", SUBSYSTEM=="hidraw", ATTRS{idVendor}=="3434", MODE="0666", GROUP="users", TAG+="uaccess", TAG+="udev-acl"
-
-# STM32 bootloader mode (firmware flashing)
-SUBSYSTEM=="usb", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="df11", MODE="0666", GROUP="users", TAG+="uaccess", TAG+="udev-acl"
-
-# Keychron Link 2.4G receiver, USB-A dongle
-SUBSYSTEM=="usb", ATTRS{idVendor}=="3434", ATTRS{idProduct}=="0d30", MODE="0666", GROUP="users", TAG+="uaccess", TAG+="udev-acl"
-
-# Keychron Link 2.4G receiver, USB-C dongle
-SUBSYSTEM=="usb", ATTRS{idVendor}=="3434", ATTRS{idProduct}=="0d31", MODE="0666", GROUP="users", TAG+="uaccess", TAG+="udev-acl"
-`;
+const LINUX_UDEV_RULE_CONTENTS = fs.readFileSync(path.join(__dirname, '99-keychron.rules'), 'utf8');
 
 function ensureLinuxUdevRule() {
   if (process.platform !== 'linux') return;
@@ -127,37 +132,34 @@ function ensureLinuxUdevRule() {
 
   if (current === LINUX_UDEV_RULE_CONTENTS) return;
 
-  const stagedPath = path.join(os.tmpdir(), 'keychron-launcher-99-keychron.rules');
-
+  let stagingDir;
+  let stagedPath;
   try {
+    stagingDir = fs.mkdtempSync(path.join(os.tmpdir(), 'keychron-launcher-'));
+    stagedPath = path.join(stagingDir, '99-keychron.rules');
     fs.writeFileSync(stagedPath, LINUX_UDEV_RULE_CONTENTS);
   } catch {
     return;
   }
 
-  const restoreCommand = [
-    `cp ${JSON.stringify(stagedPath)} ${JSON.stringify(LINUX_UDEV_RULE_PATH)}`,
-    `chmod 644 ${JSON.stringify(LINUX_UDEV_RULE_PATH)}`,
-    'udevadm control --reload-rules',
-    'udevadm trigger',
-  ].join(' && ');
-
-  // Only prompts for a password when the rule actually needs restoring, not
-  // on every launch, since the read above is what decides whether this runs
-  // at all.
-  exec(`pkexec sh -c ${JSON.stringify(restoreCommand)}`, () => {
-    try {
-      fs.unlinkSync(stagedPath);
-    } catch {
-      // Leftover temp file, harmless either way.
-    }
+  // Pass filenames as arguments, never as executable shell text.
+  const restoreCommand = 'install -m 644 "$1" "$2" && ' +
+    '(command -v restorecon >/dev/null 2>&1 && restorecon "$2" || true) && ' +
+    'udevadm control --reload-rules && udevadm trigger';
+  execFile('pkexec', ['sh', '-c', restoreCommand, 'keychron-udev', stagedPath, LINUX_UDEV_RULE_PATH], () => {
+    fs.rmSync(stagingDir, { recursive: true, force: true });
   });
+
 }
 
 app.whenReady().then(() => {
   ensureLinuxUdevRule();
 
-  Menu.setApplicationMenu(null);
+  Menu.setApplicationMenu(process.platform === 'darwin' ? Menu.buildFromTemplate([
+    { role: 'appMenu' },
+    { role: 'editMenu' },
+    { role: 'windowMenu' },
+  ]) : null);
 
   const ses = session.defaultSession;
 
@@ -250,5 +252,5 @@ app.whenReady().then(() => {
 });
 
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit();
+  app.quit();
 });

@@ -32,7 +32,7 @@ This wrapper trades away the extra features a firmware fork can offer for someth
 
 - `main.js`: the Electron main process. Single `BrowserWindow`, sandboxed, `contextIsolation` on, `nodeIntegration` off. WebHID permission handlers scoped to the Keychron origin. A native "Save As" dialog and completion notification for downloads (firmware files, etc).
 - `assets/`: app icon (PNG, ICO, ICNS, and the source SVG).
-- `99-keychron.rules`: udev rule covering Keychron's USB vendor ID (`3434`, every keyboard and mouse they make), the STM32 firmware bootloader (`0483:df11`), and both Keychron Link 2.4G receivers, USB-A (`3434:0d30`) and USB-C (`3434:0d31`). Used directly by the AUR package; `.deb`/`.rpm`/`.pacman` get the same rule from `build/linux-after-install.sh` below, since those formats don't install arbitrary files outside the app directory on their own.
+- `99-keychron.rules`: udev rule covering Keychron's USB vendor ID (`3434`, every keyboard and mouse they make), the STM32 firmware bootloader (`0483:df11`), and all Keychron USB receivers under vendor `3434`, regardless of product ID. Used directly by the AUR package; `.deb`/`.rpm`/`.pacman` get the same rule from `build/linux-after-install.sh` below, since those formats don't install arbitrary files outside the app directory on their own.
 - `build/linux-after-install.sh` / `build/linux-after-remove.sh`: postinst/postrm scripts (wired up as `afterInstall`/`afterRemove` for the `deb`, `rpm`, and `pacman` targets) that write the udev rule to `/usr/lib/udev/rules.d/`, reload udev, and reset the rule file's SELinux context with `restorecon` on SELinux-enforcing distros like Fedora. A file dropped in by a postinst script rather than the RPM database can otherwise get the wrong label and get silently ignored. On Linux, `main.js` also checks this same rule against its expected contents on every launch and rewrites it via `pkexec` if it's missing or changed, since the postinstall script only runs once and has no way to react to the file being altered or removed afterward.
 - `keychron-launcher.desktop` / `keychron-launcher.metainfo.xml`: Linux desktop entry and AppStream metadata.
 - `package.json`: electron-builder config that produces `.deb`, `.rpm`, and Arch `.pacman` packages on Linux, an NSIS installer on Windows, and an `.app` bundle on macOS.
@@ -67,7 +67,7 @@ sudo pacman -U keychron-launcher-*.pacman
 
 After installing on Linux, the udev rule reloads automatically. Plug in a Keychron keyboard, open the app, and hit Connect.
 
-The macOS build is not code-signed or notarized (it was built without access to a Mac or an Apple Developer account). Gatekeeper will block the first launch; right-click the app, choose Open, and confirm once. A signed build through Keychron's own Apple Developer account would not have this problem.
+The macOS build is not code-signed or notarized (no Apple Developer signing identity is configured). Gatekeeper will block the first launch; right-click the app, choose Open, and confirm once. A signed build through Keychron's own Apple Developer account would not have this problem.
 
 ## Build from source
 
@@ -84,6 +84,16 @@ Everything the web Launcher supports works the same way here: remapping, macros,
 
 The one thing that does not work on Linux is Quick Start (the shortcuts that open apps or sites from the keyboard). That feature depends on Keychron Assistant, a separate native helper that Keychron only publishes for Windows and macOS.
 
+## Window behavior
+
+The app remembers window size, position, maximized state, and full-screen state. If a saved monitor is no longer connected, the window is moved onto an available screen. Closing the last window quits the app on all platforms, including macOS. The macOS application menu also supports Quit / Cmd+Q.
+
+## Offline availability
+
+This wrapper loads the official website and requires an internet connection. It does not bundle the Launcher web application, device definitions, or firmware catalog. A cached page is not a reliable offline backup.
+
+A fully offline edition would require a separately maintained copy of the web application and its required resources, replacement of online API dependencies, and device-by-device testing with networking disabled. Redistribution permissions for those upstream assets would also need to be established. This release does not provide that functionality or guarantee operation if Keychron's service disappears.
+
 ## Updates
 
 The window just loads `launcher.keychron.com` live, so whatever Keychron ships on the website shows up here too, with no update to this wrapper needed. Settings are saved by the site itself and persist between launches like they would in a browser.
@@ -93,7 +103,7 @@ The wrapper itself only needs a new release if Keychron changes something the wr
 ## Troubleshooting
 
 - **Keyboard shows up but won't connect / "HID device connected" hangs:** close any other window with a WebHID lock on the keyboard first, another Launcher tab in a real browser, a QMK Toolbox instance, VIA desktop. Only one process can hold the HID handle at a time.
-- **Still nothing after reinstalling:** unplug and replug the keyboard so it re-enumerates under the freshly reloaded udev rule, and double-check the physical mode switch on the back is set to cable, not the 2.4G/Bluetooth position, since a dongle or BT connection shows up under different USB IDs than the ones this rule matches.
+- **Still nothing after reinstalling:** unplug and replug the keyboard so it re-enumerates under the freshly reloaded udev rule, and check which connection mode your device supports in Launcher. Some devices require a wired connection; Linux permissions alone do not add wireless support to the official site.
 - **Running OpenRGB at the same time:** on boards OpenRGB supports through its Keychron QMK driver, both it and this Launcher talk to the keyboard's stock firmware over the same raw HID channel, OpenRGB for lighting, the Launcher for everything else. The OS allows both to hold the device open at once, so this generally works. Firmware updates aren't affected either way: the keyboard drops off as a HID device and re-enumerates on a separate bootloader interface while flashing, so OpenRGB has nothing left to talk to during that step.
 
 Credit to the people documenting this on their own before this project existed: [morkev's fix-keychron.sh gist](https://gist.github.com/morkev/3f08cf45f38610565455bf48190b1b7e) is what first flagged the SELinux mislabeling issue that `linux-after-install.sh` now handles automatically here, and [StefanMarAntonsson/keychron-launcher-arch-setup](https://github.com/StefanMarAntonsson/keychron-launcher-arch-setup) (referenced above) is a good read for anyone who wants to understand what the udev rule is actually doing.
@@ -126,10 +136,14 @@ Instalatoarele sunt atașate la [ultimul release](../../releases/latest), câte 
 
 Wrapper-ul nu are nevoie de actualizări doar pentru că Keychron schimbă ceva pe site, fereastra arată direct pagina live, deci orice modifică ei apare automat aici. Ar avea nevoie de o versiune nouă doar dacă Keychron schimbă ceva ce ține strict de partea nativă: alt tip de permisiune în afară de WebHID, alt domeniu, sau un ID de tastatură/mouse pe care regula udev nu-l acoperă încă.
 
+Fereastra își păstrează dimensiunea, poziția și starea între porniri. Închiderea ultimei ferestre oprește aplicația inclusiv pe macOS. Regula USB acoperă toate receptoarele cu vendor ID `3434`, indiferent de product ID.
+
+Aplicația necesită internet: nu include o copie offline a site-ului, definițiilor de dispozitive sau catalogului de firmware. Un mod complet offline ar necesita dezvoltare și verificări separate, inclusiv clarificarea drepturilor de redistribuire a resurselor Keychron.
+
 ### Probleme frecvente
 
 - **Tastatura apare dar nu se conectează / rămâne blocat pe "HID device connected":** închide orice altă fereastră care mai ține tastatura ocupată prin WebHID, un alt tab de Launcher într-un browser normal, QMK Toolbox, VIA desktop. Un singur proces poate ține handle-ul HID la un moment dat.
-- **Tot nu merge după reinstalare:** scoate și rebagă tastatura ca să se reînregistreze sub regula udev proaspăt reîncărcată, și verifică switch-ul fizic din spate să fie pe cablu, nu pe poziția de 2.4G/Bluetooth, pentru că o conexiune prin dongle sau BT apare sub alte ID-uri USB decât cele acoperite de regulă.
+- **Tot nu merge după reinstalare:** scoate și rebagă tastatura ca să se reînregistreze sub regula udev proaspăt reîncărcată, și verifică modul de conectare acceptat de Launcher pentru dispozitiv. Unele modele necesită cablu; permisiunile Linux nu adaugă suport wireless în site-ul oficial.
 - **OpenRGB pornit în același timp:** pe tastaturile pe care OpenRGB le suportă prin driverul lui Keychron QMK, atât el cât și Launcherul vorbesc cu firmware-ul original al tastaturii pe același canal raw HID, OpenRGB pentru lumini, Launcherul pentru tot restul. Sistemul de operare permite ambelor să țină dispozitivul deschis simultan, deci de regulă merge. Update-urile de firmware nu sunt afectate în niciun caz, tastatura dispare ca dispozitiv HID și reapare pe o interfață separată de bootloader cât timp se face flash-ul, deci OpenRGB nu mai are cu ce să vorbească în pasul ăla.
 
 Credit celor care au documentat asta înainte să existe proiectul de aici: [gist-ul fix-keychron.sh al lui morkev](https://gist.github.com/morkev/3f08cf45f38610565455bf48190b1b7e) a semnalat primul problema de etichetare SELinux pe care `linux-after-install.sh` o rezolvă acum automat aici, iar [StefanMarAntonsson/keychron-launcher-arch-setup](https://github.com/StefanMarAntonsson/keychron-launcher-arch-setup) (menționat mai sus) e o lectură bună pentru cine vrea să înțeleagă ce face de fapt regula udev.

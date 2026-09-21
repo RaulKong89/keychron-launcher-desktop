@@ -1,17 +1,18 @@
 {
   "name": "keychron-launcher",
   "productName": "Keychron Launcher",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "description": "Unofficial native desktop wrapper for the Keychron Launcher web app (launcher.keychron.com), with WebHID support, for Linux, Windows, and macOS",
   "main": "main.js",
   "license": "MIT",
   "private": true,
   "author": "Raul Popescu <121046976+RaulKong898@users.noreply.github.com>",
-  "repository": "https://github.com/RaulKong898/keychron-launcher-desktop",
+  "repository": "https://github.com/RaulKong89/keychron-launcher-desktop",
   "scripts": {
     "dist:linux": "electron-builder --linux deb rpm pacman --x64",
     "dist:win": "electron-builder --win nsis --x64",
-    "dist:mac": "electron-builder --mac dmg zip --x64 --arm64"
+    "dist:mac": "electron-builder --mac dmg zip --x64 --arm64",
+    "test": "node --test"
   },
   "devDependencies": {
     "electron": "^37.0.0",
@@ -26,7 +27,9 @@
       "package.json",
       "assets/icon.png",
       "assets/icon.ico",
-      "assets/icon.icns"
+      "assets/icon.icns",
+      "window-state.js",
+      "99-keychron.rules"
     ],
     "linux": {
       "target": [

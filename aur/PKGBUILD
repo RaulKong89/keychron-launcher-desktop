@@ -14,6 +14,8 @@ sha256sums=('b09be952d84ff9f72311cc4a9c6677364fdbb0ee49f3a395a335bc08f204bc72')
 package() {
   cd "keychron-launcher-desktop-$pkgver"
 
+  install -Dm644 window-state.js "$pkgdir/usr/lib/keychron-launcher/window-state.js"
+  install -Dm644 99-keychron.rules "$pkgdir/usr/lib/keychron-launcher/99-keychron.rules"
   install -Dm644 main.js "$pkgdir/usr/lib/keychron-launcher/main.js"
   install -Dm644 package.json "$pkgdir/usr/lib/keychron-launcher/package.json"
 

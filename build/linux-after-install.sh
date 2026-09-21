@@ -13,10 +13,14 @@ cat > "$RULE_FILE" << 'EOF'
 # (keyboards, mice, 2.4G receivers) and the STM32 bootloader used for
 # firmware flashing.
 
+# Keychron devices: keyboards, mice, 2.4G receivers (vendor 0x3434)
 KERNEL=="hidraw*", SUBSYSTEM=="hidraw", ATTRS{idVendor}=="3434", MODE="0666", GROUP="users", TAG+="uaccess", TAG+="udev-acl"
+
+# STM32 bootloader mode (firmware flashing)
 SUBSYSTEM=="usb", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="df11", MODE="0666", GROUP="users", TAG+="uaccess", TAG+="udev-acl"
-SUBSYSTEM=="usb", ATTRS{idVendor}=="3434", ATTRS{idProduct}=="0d30", MODE="0666", GROUP="users", TAG+="uaccess", TAG+="udev-acl"
-SUBSYSTEM=="usb", ATTRS{idVendor}=="3434", ATTRS{idProduct}=="0d31", MODE="0666", GROUP="users", TAG+="uaccess", TAG+="udev-acl"
+
+# All Keychron USB devices, including every Link receiver product ID.
+SUBSYSTEM=="usb", ATTRS{idVendor}=="3434", MODE="0666", GROUP="users", TAG+="uaccess", TAG+="udev-acl"
 EOF
 
 chmod 644 "$RULE_FILE"
