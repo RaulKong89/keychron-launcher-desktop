@@ -1,6 +1,6 @@
 # Maintainer: Raul Kong Popescu <121046976+RaulKong898@users.noreply.github.com>
 pkgname=keychron-launcher
-pkgver=1.0.10
+pkgver=1.0.11
 pkgrel=1
 pkgdesc="Unofficial native desktop wrapper for the Keychron Launcher web app (launcher.keychron.com), with WebHID support"
 arch=('any')
@@ -9,7 +9,7 @@ license=('MIT')
 depends=('electron')
 optdepends=('dfu-util: manual firmware flashing in bootloader mode')
 source=("$pkgname-$pkgver.tar.gz::https://github.com/RaulKong898/keychron-launcher-desktop/archive/refs/tags/v$pkgver.tar.gz")
-sha256sums=('5b14d29071dedf7b8d71dc4107d7c8f740854c140fac493e294a48d68cd825ec')
+sha256sums=('f3f70ea8b005690bb6abbbd906f28814b506b2db84d4d40e8ef2251eefae7c70')
 
 package() {
   cd "keychron-launcher-desktop-$pkgver"
