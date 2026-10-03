@@ -1,3 +1,5 @@
 #!/bin/sh
-killall -9 SpringBoard 2>/dev/null || true
+# A full reboot is intentionally required so Camera/MobilePhone/SpringBoard and
+# their audio-session state all restart cleanly with the new routing hook.
+sync
 exit 0
