@@ -1,0 +1,43 @@
+name: Research iOS6 Audio APIs
+
+on:
+  push:
+    branches:
+      - chatgpt-ios6-micfix-build
+
+jobs:
+  research:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch legacy SDK and print exact headers
+        run: |
+          set -euxo pipefail
+          sudo apt-get update
+          sudo apt-get install -y git unzip
+          git clone --depth 1 https://github.com/Sn0wCooder/theos-sdks.git /tmp/legacy-sdks
+          cat /tmp/legacy-sdks/iPhoneOS6.1.sdk/iPhoneOS6.1.sdk.zip.* > /tmp/iPhoneOS6.1.sdk.zip
+          unzip -q /tmp/iPhoneOS6.1.sdk.zip -d /tmp/sdk
+          SDK=/tmp/sdk/iPhoneOS6.1.sdk
+
+          echo '===== AVCaptureSession audio API ====='
+          grep -n -B8 -A18 -E 'automaticallyConfiguresApplicationAudioSession|usesApplicationAudioSession|ApplicationAudioSession|audio session' \
+            "$SDK/System/Library/Frameworks/AVFoundation.framework/Headers/AVCaptureSession.h" || true
+
+          echo '===== AVAudioSession input/data source API ====='
+          grep -n -B8 -A20 -E 'availableInputs|setPreferredInput|inputDataSources|setInputDataSource|DataSource|OrientationBottom|ModeVideoRecording|ModeMeasurement' \
+            "$SDK/System/Library/Frameworks/AVFoundation.framework/Headers/AVAudioSession.h" || true
+
+          echo '===== legacy AudioSession modes/input source ====='
+          grep -n -B8 -A20 -E 'kAudioSessionProperty_InputSource|kAudioSessionProperty_InputSources|kAudioSessionProperty_Mode|kAudioSessionMode_VideoRecording|kAudioSessionMode_Measurement|kAudioSessionMode_Default|kAudioSessionMode_VoiceChat|kAudioSessionMode_GameChat' \
+            "$SDK/System/Library/Frameworks/AudioToolbox.framework/Headers/AudioSession.h" || true
+
+          echo '===== AVCaptureSession public interface whole relevant section ====='
+          sed -n '1,360p' "$SDK/System/Library/Frameworks/AVFoundation.framework/Headers/AVCaptureSession.h" | tail -n 220
+
+          echo '===== SDK AVFoundation binary selector strings ====='
+          AVBIN="$SDK/System/Library/Frameworks/AVFoundation.framework/AVFoundation"
+          if [ -f "$AVBIN" ]; then
+            file "$AVBIN"
+            strings -a "$AVBIN" | grep -E 'automaticallyConfiguresApplicationAudioSession|usesApplicationAudioSession|setAutomaticallyConfiguresApplicationAudioSession|VideoRecording|InputDataSource|PreferredInput' | sort -u || true
+          fi
