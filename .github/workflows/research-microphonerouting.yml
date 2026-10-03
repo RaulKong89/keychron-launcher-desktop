@@ -1,0 +1,37 @@
+name: Research MicrophoneRouting
+
+on:
+  push:
+    branches:
+      - chatgpt-ios6-micfix-build
+
+jobs:
+  research:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download and inspect BigBoss MicrophoneRouting
+        run: |
+          set -euxo pipefail
+          mkdir -p /tmp/mr
+          curl -L --fail --retry 3 --connect-timeout 20 \
+            -o /tmp/mr/microphonerouting.deb \
+            https://apt.thebigboss.org/repofiles/cydia/debs2.0/microphonerouting_0.0.2.deb
+          sha256sum /tmp/mr/microphonerouting.deb
+          dpkg-deb -R /tmp/mr/microphonerouting.deb /tmp/mr/root
+          find /tmp/mr/root -maxdepth 6 -type f -print
+          echo "=== CONTROL ==="
+          cat /tmp/mr/root/DEBIAN/control || true
+          echo "=== PLISTS ==="
+          find /tmp/mr/root -name '*.plist' -type f -exec sh -c 'echo --- $1; cat "$1"' _ {} \;
+          echo "=== DYLIB INFO ==="
+          find /tmp/mr/root -name '*.dylib' -type f -exec file {} \;
+          echo "=== STRINGS FILTERED ==="
+          find /tmp/mr/root -name '*.dylib' -type f -exec strings -a {} \; | grep -Eai 'micro|audio|capture|source|route|input|bottom|top|front|back|session|camera|preferred' | sort -u | head -n 1000 || true
+          echo "=== NM ==="
+          find /tmp/mr/root -name '*.dylib' -type f -exec nm -a {} \; 2>&1 | grep -Eai 'micro|audio|capture|source|route|input|session|camera' | head -n 1000 || true
+          tar -C /tmp/mr -czf "$GITHUB_WORKSPACE/microphonerouting-inspect.tgz" root
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MicrophoneRouting-inspect
+          path: microphonerouting-inspect.tgz
