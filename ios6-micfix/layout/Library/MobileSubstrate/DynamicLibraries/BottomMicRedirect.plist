@@ -1,0 +1,13 @@
+{
+    Filter = {
+        Bundles = (
+            "com.apple.UIKit"
+        );
+        Executables = (
+            "MobilePhone",
+            "Camera",
+            "SpringBoard",
+            "mediaserverd"
+        );
+    };
+}
