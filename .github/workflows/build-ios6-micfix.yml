@@ -14,10 +14,11 @@ jobs:
       - name: Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential dpkg-dev curl xz-utils git libtinfo5
+          sudo apt-get install -y build-essential dpkg-dev curl xz-utils git unzip libtinfo5
 
-      - name: Install iOS ARMv7 toolchain and SDK
+      - name: Install iOS ARMv7 toolchain and legacy SDK
         run: |
+          set -euxo pipefail
           mkdir -p "$HOME/ios-toolchain"
           curl -L --fail -o /tmp/toolchain.tar.lzma \
             https://github.com/sbingner/llvm-project/releases/download/v10.0.0-1/linux-ios-arm64e-clang-toolchain.tar.lzma
@@ -25,8 +26,14 @@ jobs:
           tar -xvf /tmp/toolchain.tar.lzma -C "$tmpdir"
           cp -a "$tmpdir"/ios-arm64e-clang-toolchain/. "$HOME/ios-toolchain/"
 
-          git clone --depth 1 https://github.com/theos/sdks.git /tmp/theos-sdks
-          cp -a /tmp/theos-sdks/iPhoneOS9.3.sdk "$HOME/iPhoneOS9.3.sdk"
+          git clone --depth 1 https://github.com/Sn0wCooder/theos-sdks.git /tmp/legacy-sdks
+          cat /tmp/legacy-sdks/iPhoneOS6.1.sdk/iPhoneOS6.1.sdk.zip.* > /tmp/iPhoneOS6.1.sdk.zip
+          mkdir -p /tmp/ios61-unpacked
+          unzip -q /tmp/iPhoneOS6.1.sdk.zip -d /tmp/ios61-unpacked
+          SDK_FOUND="$(find /tmp/ios61-unpacked -maxdepth 4 -type d -name iPhoneOS6.1.sdk | head -n 1)"
+          test -n "$SDK_FOUND"
+          cp -a "$SDK_FOUND" "$HOME/iPhoneOS6.1.sdk"
+          test -f "$HOME/iPhoneOS6.1.sdk/usr/include/stdlib.h"
 
       - name: Compile ARMv7 dylib and build DEB
         run: |
