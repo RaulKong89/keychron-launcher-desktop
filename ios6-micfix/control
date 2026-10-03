@@ -1,11 +1,11 @@
 Package: com.raulkong89.bottommicredirect
 Name: iPhone 4S Bottom Mic Redirect
-Version: 3.0.0
+Version: 4.0.0
 Architecture: iphoneos-arm
-Description: iPhone 4S iOS 6 microphone routing patch. Blocks VideoRecording audio-session mode at both AVAudioSession and legacy AudioSession APIs so iOS 6 selects the primary/bottom microphone instead of the top camera microphone.
+Description: Rebuilt-from-zero iPhone 4S iOS 6 microphone routing patch. Correct Substrate Any-mode injection, direct private iOS 6 bottom data-source forcing, VideoRecording-mode interception, AVCaptureSession interception, legacy AudioSession hooks, and on-device diagnostics.
 Maintainer: RaulKong89
 Author: RaulKong89 / ChatGPT
 Section: Tweaks
 Depends: mobilesubstrate, firmware (>= 6.0), firmware (<< 7.0)
-Conflicts: com.raulkong89.bottommicredirect (<< 3.0.0)
-Replaces: com.raulkong89.bottommicredirect (<< 3.0.0)
+Conflicts: com.raulkong89.bottommicredirect (<< 4.0.0)
+Replaces: com.raulkong89.bottommicredirect (<< 4.0.0)
