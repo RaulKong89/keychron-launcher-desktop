@@ -34,21 +34,25 @@ jobs:
           test -n "$SDK_FOUND"
           cp -a "$SDK_FOUND" "$HOME/iPhoneOS6.1.sdk"
           test -f "$HOME/iPhoneOS6.1.sdk/usr/include/stdlib.h"
+          test -f "$HOME/iPhoneOS6.1.sdk/System/Library/Frameworks/AVFoundation.framework/Headers/AVAudioSession.h"
 
       - name: Compile ARMv7 dylib and build DEB
         run: |
           set -euxo pipefail
           TC="$HOME/ios-toolchain"
           SDK="$HOME/iPhoneOS6.1.sdk"
-          SRC="$GITHUB_WORKSPACE/ios6-micfix/Tweak.c"
-          OUT="$GITHUB_WORKSPACE/ios6-micfix/build"
+          SRC="$GITHUB_WORKSPACE/ios6-micfix/TweakV2.m"
+          OUT="$GITHUB_WORKSPACE/ios6-micfix/build-v2"
           PKG="$OUT/pkg"
           mkdir -p "$OUT" "$PKG/DEBIAN" "$PKG/Library/MobileSubstrate/DynamicLibraries"
 
           "$TC/bin/clang" \
             -target armv7-apple-ios6.0 \
             -isysroot "$SDK" \
-            -Os -fPIC -dynamiclib \
+            -Os -fPIC -fno-objc-arc -dynamiclib \
+            -framework Foundation \
+            -framework AVFoundation \
+            -framework AudioToolbox \
             -Wl,-install_name,/Library/MobileSubstrate/DynamicLibraries/BottomMicRedirect.dylib \
             -Wl,-dead_strip \
             "$SRC" \
@@ -62,16 +66,21 @@ jobs:
           cp "$GITHUB_WORKSPACE/ios6-micfix/layout/DEBIAN/postinst" "$PKG/DEBIAN/postinst"
           chmod 0755 "$PKG/DEBIAN/postinst"
 
+          echo "=== dylib architecture ==="
           file "$PKG/Library/MobileSubstrate/DynamicLibraries/BottomMicRedirect.dylib"
           "$TC/bin/otool" -hv "$PKG/Library/MobileSubstrate/DynamicLibraries/BottomMicRedirect.dylib" || true
+          "$TC/bin/otool" -L "$PKG/Library/MobileSubstrate/DynamicLibraries/BottomMicRedirect.dylib" || true
 
-          dpkg-deb --build --root-owner-group "$PKG" "$OUT/com.raulkong89.bottommicredirect_1.0.0_iphoneos-arm.deb"
-          dpkg-deb --info "$OUT/com.raulkong89.bottommicredirect_1.0.0_iphoneos-arm.deb"
-          dpkg-deb --contents "$OUT/com.raulkong89.bottommicredirect_1.0.0_iphoneos-arm.deb"
+          DEB="$OUT/com.raulkong89.bottommicredirect_2.0.0_iphoneos-arm.deb"
+          dpkg-deb --build --root-owner-group -Zgzip "$PKG" "$DEB"
+          echo "=== package info ==="
+          dpkg-deb --info "$DEB"
+          echo "=== package contents ==="
+          dpkg-deb --contents "$DEB"
 
       - name: Upload DEB
         uses: actions/upload-artifact@v4
         with:
-          name: iPhone4S-iOS6-BottomMicRedirect-DEB
-          path: ios6-micfix/build/*.deb
+          name: iPhone4S-iOS6-BottomMicRedirect-v2-DEB
+          path: ios6-micfix/build-v2/*.deb
           if-no-files-found: error
