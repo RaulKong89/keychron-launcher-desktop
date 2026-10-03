@@ -1,0 +1,18 @@
+#!/bin/sh
+LOG=/var/mobile/Library/Logs/BottomMicRedirect.log
+echo "=== BottomMicRedirect v4 diagnostic ==="
+echo "Date: $(date)"
+echo "Device: $(uname -a)"
+echo
+echo "--- Installed package ---"
+dpkg -s com.raulkong89.bottommicredirect 2>&1 | grep -E '^(Package|Version|Architecture|Status):'
+echo
+echo "--- Installed files ---"
+ls -l /Library/MobileSubstrate/DynamicLibraries/BottomMicRedirect.* 2>&1
+echo
+echo "--- Recent tweak log ---"
+if [ -f "$LOG" ]; then
+    tail -n 300 "$LOG"
+else
+    echo "NO LOG FILE: tweak has not logged yet."
+fi
