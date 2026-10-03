@@ -1,0 +1,46 @@
+name: Extract iOS6 Frameworks
+
+on:
+  push:
+    branches:
+      - chatgpt-ios6-micfix-build
+
+jobs:
+  extract:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract relevant iOS 6.1 binaries
+        run: |
+          set -euxo pipefail
+          sudo apt-get update
+          sudo apt-get install -y git unzip
+          git clone --depth 1 https://github.com/Sn0wCooder/theos-sdks.git /tmp/legacy-sdks
+          cat /tmp/legacy-sdks/iPhoneOS6.1.sdk/iPhoneOS6.1.sdk.zip.* > /tmp/iPhoneOS6.1.sdk.zip
+          unzip -q /tmp/iPhoneOS6.1.sdk.zip -d /tmp/sdk
+          SDK=/tmp/sdk/iPhoneOS6.1.sdk
+          OUT="$GITHUB_WORKSPACE/ios6-framework-research"
+          mkdir -p "$OUT"
+
+          cp "$SDK/System/Library/Frameworks/AVFoundation.framework/AVFoundation" "$OUT/AVFoundation"
+          cp "$SDK/System/Library/Frameworks/AudioToolbox.framework/AudioToolbox" "$OUT/AudioToolbox"
+
+          for name in Celestial MediaToolbox CoreMedia AudioToolboxServer Conference MobilePhone MobileTelephony; do
+            p="$SDK/System/Library/PrivateFrameworks/$name.framework/$name"
+            if [ -f "$p" ]; then cp "$p" "$OUT/$name"; fi
+          done
+
+          find "$SDK/System/Library/PrivateFrameworks" -maxdepth 2 -type f \
+            \( -iname '*audio*' -o -iname '*media*' -o -iname '*celestial*' -o -iname '*conference*' -o -iname '*telephony*' \) \
+            -size -50M -print > "$OUT/private_candidates.txt" || true
+
+          echo "=== extracted ==="
+          ls -lh "$OUT"
+          echo "=== AVFoundation relevant strings ==="
+          strings -a "$OUT/AVFoundation" | grep -Eai 'AudioSession|VideoRecording|Microphone|InputDataSource|CaptureSession|FigCapture|AudioCategory|Measurement' | sort -u > "$OUT/AVFoundation_audio_strings.txt" || true
+          head -n 2000 "$OUT/AVFoundation_audio_strings.txt"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: iOS6-Audio-Camera-Frameworks
+          path: ios6-framework-research
