@@ -14,7 +14,7 @@ jobs:
         run: |
           set -euxo pipefail
           mkdir -p /tmp/mr
-          curl -L --fail --retry 3 --connect-timeout 20 \
+          curl -k -L --fail --retry 3 --connect-timeout 20 \
             -o /tmp/mr/microphonerouting.deb \
             https://apt.thebigboss.org/repofiles/cydia/debs2.0/microphonerouting_0.0.2.deb
           sha256sum /tmp/mr/microphonerouting.deb
