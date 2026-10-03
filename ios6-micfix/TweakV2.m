@@ -1,5 +1,6 @@
 #import <Foundation/Foundation.h>
-#import <AVFoundation/AVFoundation.h>\n#import <AudioToolbox/AudioSession.h>
+#import <AVFoundation/AVFoundation.h>
+#import <AudioToolbox/AudioSession.h>
 #import <objc/runtime.h>
 #import <dlfcn.h>
 #import <dispatch/dispatch.h>
