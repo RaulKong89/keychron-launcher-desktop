@@ -6,8 +6,7 @@
         Executables = (
             "MobilePhone",
             "Camera",
-            "SpringBoard",
-            "mediaserverd"
+            "SpringBoard"
         );
     };
 }
