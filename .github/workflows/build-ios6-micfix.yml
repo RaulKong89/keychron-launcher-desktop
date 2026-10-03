@@ -1,0 +1,55 @@
+name: Build iOS 6 Bottom Mic Redirect
+
+on:
+  push:
+    branches:
+      - chatgpt-ios6-micfix-build
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential fakeroot dpkg-dev git curl xz-utils unzip libtinfo5
+
+      - name: Install Theos
+        run: |
+          git clone --recursive --depth 1 https://github.com/theos/theos.git "$HOME/theos"
+          mkdir -p "$HOME/theos/toolchain/linux/iphone"
+          curl -L --fail -o /tmp/toolchain.tar.lzma \
+            https://github.com/sbingner/llvm-project/releases/download/v10.0.0-1/linux-ios-arm64e-clang-toolchain.tar.lzma
+          tmpdir="$(mktemp -d)"
+          tar -xvf /tmp/toolchain.tar.lzma -C "$tmpdir"
+          cp -a "$tmpdir"/ios-arm64e-clang-toolchain/. "$HOME/theos/toolchain/linux/iphone/"
+          git clone --depth 1 https://github.com/theos/sdks.git /tmp/theos-sdks
+          cp -a /tmp/theos-sdks/iPhoneOS9.3.sdk "$HOME/theos/sdks/"
+
+      - name: Build ARMv7 DEB
+        env:
+          THEOS: ${{ github.workspace }}/../theos-placeholder
+        run: |
+          export THEOS="$HOME/theos"
+          export PATH="$THEOS/toolchain/linux/iphone/bin:$PATH"
+          cd ios6-micfix
+          chmod +x layout/DEBIAN/postinst
+          make clean
+          make package FINALPACKAGE=1
+          echo "=== packages ==="
+          ls -lah packages
+          echo "=== dylib ==="
+          find .theos -name '*.dylib' -exec file {} \;
+          echo "=== deb info ==="
+          dpkg-deb --info packages/*.deb
+          mkdir -p out
+          cp packages/*.deb out/
+
+      - name: Upload DEB
+        uses: actions/upload-artifact@v4
+        with:
+          name: iPhone4S-iOS6-BottomMicRedirect-DEB
+          path: ios6-micfix/out/*.deb
+          if-no-files-found: error
