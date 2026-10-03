@@ -4,9 +4,10 @@
             "com.apple.UIKit"
         );
         Executables = (
-            "MobilePhone",
             "Camera",
-            "SpringBoard"
+            "MobilePhone",
+            "SpringBoard",
+            "mediaserverd"
         );
     };
 }
