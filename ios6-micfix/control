@@ -1,0 +1,9 @@
+Package: com.raulkong89.bottommicredirect
+Name: iPhone 4S Bottom Mic Redirect
+Version: 1.0.0
+Architecture: iphoneos-arm
+Description: Forces iPhone 4S iOS 6 audio sessions away from modes that select the broken top microphone and toward the working bottom microphone.
+Maintainer: RaulKong89
+Author: RaulKong89 / ChatGPT
+Section: Tweaks
+Depends: mobilesubstrate, firmware (>= 6.0)
