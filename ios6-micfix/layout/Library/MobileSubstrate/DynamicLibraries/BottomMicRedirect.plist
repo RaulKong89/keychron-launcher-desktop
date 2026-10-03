@@ -1,12 +1,12 @@
 {
     Filter = {
+        Mode = "Any";
         Bundles = (
             "com.apple.UIKit"
         );
         Executables = (
             "Camera",
             "MobilePhone",
-            "SpringBoard",
             "mediaserverd"
         );
     };
