@@ -1,5 +1,5 @@
 #import <Foundation/Foundation.h>
-#import <AVFoundation/AVFoundation.h>
+#import <AVFoundation/AVFoundation.h>\n#import <AudioToolbox/AudioSession.h>
 #import <objc/runtime.h>
 #import <dlfcn.h>
 #import <dispatch/dispatch.h>
@@ -11,11 +11,6 @@
 
 typedef void (*MSHookMessageExFn)(Class, SEL, IMP, IMP *);
 typedef void (*MSHookFunctionFn)(void *, void *, void **);
-
-typedef int32_t OSStatus;
-typedef uint32_t AudioSessionPropertyID;
-typedef uint32_t UInt32;
-typedef unsigned char Boolean;
 
 typedef OSStatus (*AudioSessionSetPropertyFn)(AudioSessionPropertyID, UInt32, const void *);
 typedef OSStatus (*AudioSessionSetActiveFn)(Boolean);
