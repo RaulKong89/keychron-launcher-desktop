@@ -1,0 +1,10 @@
+#!/bin/sh
+echo "=== iPhone 4S Bottom Mic Hardware Route v5 ==="
+echo "Date: $(date)"
+echo
+dpkg -s com.raulkong89.bottommicredirect 2>/dev/null | grep -E '^(Package|Version|Status|Architecture):' || true
+echo
+/usr/bin/bottommic-hw status 2>&1 || true
+echo
+echo "--- audio processes ---"
+ps ax 2>/dev/null | grep -E '[m]ediaserverd|[M]obilePhone|[C]amera' || true
