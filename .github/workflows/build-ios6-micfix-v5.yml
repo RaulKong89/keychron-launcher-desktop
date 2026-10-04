@@ -1,0 +1,86 @@
+name: Build iOS 6 Bottom Mic HAL v5
+
+on:
+  push:
+    branches:
+      - chatgpt-ios6-micfix-build
+    paths:
+      - 'ios6-micfix-v5/**'
+      - '.github/workflows/build-ios6-micfix-v5.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential dpkg-dev curl xz-utils git unzip libtinfo5
+
+      - name: Install iOS ARMv7 toolchain and iOS 6.1 SDK
+        run: |
+          set -euxo pipefail
+          mkdir -p "$HOME/ios-toolchain"
+          curl -L --fail -o /tmp/toolchain.tar.lzma \
+            https://github.com/sbingner/llvm-project/releases/download/v10.0.0-1/linux-ios-arm64e-clang-toolchain.tar.lzma
+          tmpdir="$(mktemp -d)"
+          tar -xvf /tmp/toolchain.tar.lzma -C "$tmpdir"
+          cp -a "$tmpdir"/ios-arm64e-clang-toolchain/. "$HOME/ios-toolchain/"
+
+          git clone --depth 1 https://github.com/Sn0wCooder/theos-sdks.git /tmp/legacy-sdks
+          cat /tmp/legacy-sdks/iPhoneOS6.1.sdk/iPhoneOS6.1.sdk.zip.* > /tmp/iPhoneOS6.1.sdk.zip
+          mkdir -p /tmp/ios61-unpacked
+          unzip -q /tmp/iPhoneOS6.1.sdk.zip -d /tmp/ios61-unpacked
+          SDK_FOUND="$(find /tmp/ios61-unpacked -maxdepth 4 -type d -name iPhoneOS6.1.sdk | head -n 1)"
+          test -n "$SDK_FOUND"
+          cp -a "$SDK_FOUND" "$HOME/iPhoneOS6.1.sdk"
+
+      - name: Compile hardware preference helper
+        run: |
+          set -euxo pipefail
+          TC="$HOME/ios-toolchain"
+          SDK="$HOME/iPhoneOS6.1.sdk"
+          mkdir -p ios6-micfix-v5/build/pkg/DEBIAN ios6-micfix-v5/build/pkg/usr/bin
+
+          "$TC/bin/clang" \
+            -target armv7-apple-ios6.0 \
+            -isysroot "$SDK" \
+            -Os \
+            -framework CoreFoundation \
+            ios6-micfix-v5/bottommic-hw.c \
+            -o ios6-micfix-v5/build/pkg/usr/bin/bottommic-hw
+
+          "$TC/bin/ldid" -S ios6-micfix-v5/build/pkg/usr/bin/bottommic-hw
+          chmod 0755 ios6-micfix-v5/build/pkg/usr/bin/bottommic-hw
+
+          cp ios6-micfix-v5/bottommic-status ios6-micfix-v5/build/pkg/usr/bin/bottommic-status
+          chmod 0755 ios6-micfix-v5/build/pkg/usr/bin/bottommic-status
+          cp ios6-micfix-v5/control ios6-micfix-v5/build/pkg/DEBIAN/control
+          cp ios6-micfix-v5/postinst ios6-micfix-v5/build/pkg/DEBIAN/postinst
+          cp ios6-micfix-v5/postrm ios6-micfix-v5/build/pkg/DEBIAN/postrm
+          chmod 0755 ios6-micfix-v5/build/pkg/DEBIAN/postinst ios6-micfix-v5/build/pkg/DEBIAN/postrm
+
+          echo "=== helper architecture ==="
+          file ios6-micfix-v5/build/pkg/usr/bin/bottommic-hw
+          "$TC/bin/otool" -hv ios6-micfix-v5/build/pkg/usr/bin/bottommic-hw
+          "$TC/bin/otool" -L ios6-micfix-v5/build/pkg/usr/bin/bottommic-hw
+
+      - name: Build gzip DEB
+        run: |
+          set -euxo pipefail
+          DEB=ios6-micfix-v5/build/com.raulkong89.bottommicredirect_5.0.0_iphoneos-arm.deb
+          dpkg-deb --build --root-owner-group -Zgzip ios6-micfix-v5/build/pkg "$DEB"
+          dpkg-deb --info "$DEB"
+          dpkg-deb --contents "$DEB"
+          sha256sum "$DEB" | tee ios6-micfix-v5/build/SHA256.txt
+
+      - name: Upload DEB
+        uses: actions/upload-artifact@v4
+        with:
+          name: iPhone4S-iOS6-BottomMic-HAL-v5
+          path: |
+            ios6-micfix-v5/build/*.deb
+            ios6-micfix-v5/build/SHA256.txt
+          if-no-files-found: error
