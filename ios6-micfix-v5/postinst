@@ -1,0 +1,17 @@
+#!/bin/sh
+set -e
+
+# v1-v4 were process hooks. v5 replaces them completely with the audio HAL's
+# own N94 microphone override, so make sure no old injection survives.
+rm -f /Library/MobileSubstrate/DynamicLibraries/BottomMicRedirect.dylib
+rm -f /Library/MobileSubstrate/DynamicLibraries/BottomMicRedirect.plist
+
+if [ -x /usr/bin/bottommic-hw ]; then
+    /usr/bin/bottommic-hw apply || true
+fi
+
+# VirtualAudio reads runtime defaults in mediaserverd. Restart it now, but a
+# full device reboot is still recommended after dpkg/Cydia finishes.
+killall mediaserverd 2>/dev/null || true
+sync
+exit 0
