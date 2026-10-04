@@ -1,0 +1,11 @@
+#!/bin/sh
+case "$1" in
+    remove|purge)
+        if [ -x /usr/bin/bottommic-hw ]; then
+            /usr/bin/bottommic-hw clear || true
+        fi
+        killall mediaserverd 2>/dev/null || true
+        sync
+        ;;
+esac
+exit 0
