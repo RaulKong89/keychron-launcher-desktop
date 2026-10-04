@@ -1,0 +1,11 @@
+Package: com.raulkong89.bottommicredirect
+Name: iPhone 4S Bottom Mic Hardware Route
+Version: 5.0.0
+Architecture: iphoneos-arm
+Description: iOS 6.1.x iPhone 4S (N94) low-level VirtualAudio HAL override. Forces BuiltInMicSelection bit 0, which the exact iOS 6.1.3 N94 VirtualAudio binary identifies as the bottom/primary microphone. No MobileSubstrate hooks.
+Maintainer: RaulKong89
+Author: RaulKong89 / ChatGPT
+Section: System
+Depends: firmware (>= 6.0), firmware (<< 7.0)
+Conflicts: com.raulkong89.bottommicredirect (<< 5.0.0)
+Replaces: com.raulkong89.bottommicredirect (<< 5.0.0)
