@@ -1,0 +1,44 @@
+name: Analyze MicrophoneRouting v2
+
+on:
+  push:
+    branches:
+      - chatgpt-ios6-micfix-build
+
+jobs:
+  analyze:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y curl dpkg-dev file binutils llvm
+      - name: Download and inspect original tweak
+        run: |
+          set -euxo pipefail
+          mkdir -p analysis/microphonerouting/extracted
+          curl -k -L --fail --retry 5 --connect-timeout 20 \
+            -o analysis/microphonerouting/original.deb \
+            https://apt.thebigboss.org/repofiles/cydia/debs2.0/microphonerouting_0.0.2.deb
+          sha256sum analysis/microphonerouting/original.deb | tee analysis/microphonerouting/SHA256.txt
+          dpkg-deb -I analysis/microphonerouting/original.deb | tee analysis/microphonerouting/control.txt
+          dpkg-deb -x analysis/microphonerouting/original.deb analysis/microphonerouting/extracted
+          find analysis/microphonerouting/extracted -maxdepth 8 -type f -print | tee analysis/microphonerouting/files.txt
+          while IFS= read -r f; do
+            echo "===== $f =====" >> analysis/microphonerouting/file-info.txt
+            file "$f" >> analysis/microphonerouting/file-info.txt || true
+            if file "$f" | grep -q 'Mach-O'; then
+              strings -a "$f" > "$f.strings.txt" || true
+              llvm-objdump --macho --private-headers "$f" > "$f.headers.txt" 2>&1 || true
+              llvm-objdump --macho --dylibs-used "$f" > "$f.dylibs.txt" 2>&1 || true
+              llvm-objdump --macho --syms "$f" > "$f.syms.txt" 2>&1 || true
+              llvm-objdump --macho --disassemble "$f" > "$f.disasm.txt" 2>&1 || true
+            fi
+          done < analysis/microphonerouting/files.txt
+      - name: Upload analysis
+        uses: actions/upload-artifact@v4
+        with:
+          name: MicrophoneRouting-analysis-v2
+          path: analysis/microphonerouting
+          if-no-files-found: error
