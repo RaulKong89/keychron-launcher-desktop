@@ -1,6 +1,7 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 #import <MediaPlayer/MediaPlayer.h>
+#include <math.h>
 
 @interface MPAVItem : NSObject
 - (NSString *)lyrics;
