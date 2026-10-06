@@ -1,0 +1,37 @@
+name: Build Lyricalizer LRCLIB iOS 6
+
+on:
+  push:
+    branches:
+      - lyricalizer-lrclib-build
+    paths:
+      - 'lyricalizer_lrclib/**'
+      - '.github/workflows/build-lyricalizer-lrclib.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build armv7 rootful deb with Theos
+        run: |
+          docker pull qusic/theos:latest
+          docker run --rm \
+            -v "$PWD":/workspace \
+            -w /workspace/lyricalizer_lrclib \
+            -e THEOS=/opt/theos \
+            qusic/theos:latest \
+            bash -lc 'make clean package FINALPACKAGE=1'
+
+      - name: Show package
+        run: |
+          find lyricalizer_lrclib/packages -maxdepth 1 -type f -name '*.deb' -print -exec sha256sum {} \;
+
+      - name: Upload deb
+        uses: actions/upload-artifact@v4
+        with:
+          name: Lyricalizer-LRCLIB-iOS6
+          path: lyricalizer_lrclib/packages/*.deb
+          if-no-files-found: error
