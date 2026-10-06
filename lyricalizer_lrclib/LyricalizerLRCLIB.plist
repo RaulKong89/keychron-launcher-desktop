@@ -1,0 +1,6 @@
+Filter = {
+    Executables = (
+        "Music~iphone",
+        "Music"
+    );
+};
