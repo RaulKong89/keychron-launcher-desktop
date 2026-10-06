@@ -8,20 +8,49 @@ on:
       - 'lyricalizer_lrclib/**'
       - '.github/workflows/build-lyricalizer-lrclib.yml'
 
+concurrency:
+  group: lyricalizer-lrclib-ios6
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-22.04
+    env:
+      THEOS: ${{ github.workspace }}/theos
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Prepare legacy Theos + iOS 6.1 SDK
-        uses: Vusys/WallpaperParallax/.github/actions/setup-theos@e124f23df3bf6353663921483f660b960473a026
+      - name: Install host dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential fakeroot rsync curl perl zip unzip git libxml2 libtinfo6
+          sudo update-alternatives --set fakeroot /usr/bin/fakeroot-sysv || true
+
+      - name: Cache legacy Theos toolchain
+        id: theos-cache
+        uses: actions/cache@v4
         with:
-          theos-dir: theos
-          sdk-name: iPhoneOS6.1.sdk
-          sdk-url: https://github.com/growtopiajaw/iPhoneOS-SDK/releases/download/v1.0/iPhoneOS6.1.sdk.zip
-          cache-key-suffix: lyricalizer-ios6-v1
+          path: ${{ env.THEOS }}
+          key: lyricalizer-theos-linux-ios61-v1
+
+      - name: Prepare Theos + Linux iOS toolchain + iOS 6.1 SDK
+        if: steps.theos-cache.outputs.cache-hit != 'true'
+        run: |
+          git clone --recursive --depth 1 https://github.com/theos/theos.git "$THEOS"
+
+          curl -fL https://github.com/L1ghtmann/llvm-project/releases/latest/download/iOSToolchain-x86_64.tar.xz \
+            | tar -xJf - -C "$THEOS/toolchain/"
+
+          mkdir -p "$THEOS/sdks"
+          curl -fL -o /tmp/iPhoneOS6.1.sdk.zip \
+            https://github.com/growtopiajaw/iPhoneOS-SDK/releases/download/v1.0/iPhoneOS6.1.sdk.zip
+          unzip -q /tmp/iPhoneOS6.1.sdk.zip -d "$THEOS/sdks"
+          rm -f /tmp/iPhoneOS6.1.sdk.zip
+
+          test -f "$THEOS/sdks/iPhoneOS6.1.sdk/SDKSettings.plist"
+          test -x "$THEOS/toolchain/linux/iphone/bin/clang" || find "$THEOS/toolchain" -type f -name clang -print
 
       - name: Build armv7 rootful deb
         working-directory: lyricalizer_lrclib
