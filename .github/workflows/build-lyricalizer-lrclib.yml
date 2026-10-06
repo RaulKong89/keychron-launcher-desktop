@@ -15,19 +15,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build armv7 rootful deb with Theos
-        run: |
-          docker pull qusic/theos:latest
-          docker run --rm \
-            -v "$PWD":/workspace \
-            -w /workspace/lyricalizer_lrclib \
-            -e THEOS=/opt/theos \
-            qusic/theos:latest \
-            bash -lc 'make clean package FINALPACKAGE=1'
+      - name: Prepare Theos
+        uses: Randomblock1/theos-action@main
+        with:
+          theos-dir: theos
+          theos-src: https://github.com/theos/theos
+          theos-sdks: https://github.com/theos/sdks
+          theos-sdks-branch: master
 
-      - name: Show package
+      - name: Build armv7 rootful deb
+        working-directory: lyricalizer_lrclib
         run: |
-          find lyricalizer_lrclib/packages -maxdepth 1 -type f -name '*.deb' -print -exec sha256sum {} \;
+          make clean package FINALPACKAGE=1
+          find packages -maxdepth 1 -type f -name '*.deb' -print -exec sha256sum {} \;
 
       - name: Upload deb
         uses: actions/upload-artifact@v4
