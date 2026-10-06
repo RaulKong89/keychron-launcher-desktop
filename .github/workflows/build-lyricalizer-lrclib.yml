@@ -15,13 +15,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Prepare Theos
-        uses: Randomblock1/theos-action@main
+      - name: Prepare legacy Theos + iOS 6.1 SDK
+        uses: Vusys/WallpaperParallax/.github/actions/setup-theos@e124f23df3bf6353663921483f660b960473a026
         with:
-          theos-dir: ${{ github.workspace }}/theos
-          theos-src: https://github.com/theos/theos
-          theos-sdks: https://github.com/theos/sdks
-          theos-sdks-branch: master
+          theos-dir: theos
+          sdk-name: iPhoneOS6.1.sdk
+          sdk-url: https://github.com/growtopiajaw/iPhoneOS-SDK/releases/download/v1.0/iPhoneOS6.1.sdk.zip
+          cache-key-suffix: lyricalizer-ios6-v1
 
       - name: Build armv7 rootful deb
         working-directory: lyricalizer_lrclib
