@@ -3,13 +3,13 @@ name: Build Lyricalizer LRCLIB iOS 6
 on:
   push:
     branches:
-      - lyricalizer-lrclib-v3-ui-build
+      - lyricalizer-lrclib-v4-full-build
     paths:
       - 'lyricalizer_lrclib/**'
       - '.github/workflows/build-lyricalizer-lrclib.yml'
 
 concurrency:
-  group: lyricalizer-lrclib-ios6-v3-ui
+  group: lyricalizer-lrclib-ios6-v4-full
   cancel-in-progress: true
 
 jobs:
@@ -91,10 +91,15 @@ jobs:
         run: |
           make clean package FINALPACKAGE=1
           find packages -maxdepth 1 -type f -name '*.deb' -print -exec sha256sum {} \;
+          file .theos/obj/armv7/LyricalizerLRCLIB.dylib
+          if strings .theos/obj/armv7/LyricalizerLRCLIB.dylib | grep -Eqi 'Downloading lyrics|Searching lyrics|No lyrics found for this track'; then
+            echo "Unexpected user-visible placeholder string in final dylib"
+            exit 1
+          fi
 
       - name: Upload deb
         uses: actions/upload-artifact@v4
         with:
-          name: Lyricalizer-LRCLIB-iOS6-v3-livefix
+          name: Lyricalizer-LRCLIB-iOS6-v4-full
           path: lyricalizer_lrclib/packages/*.deb
           if-no-files-found: error
