@@ -25,7 +25,7 @@ jobs:
       - name: Install host dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential fakeroot rsync curl perl zip unzip git libxml2 libtinfo6
+          sudo apt-get install -y build-essential fakeroot rsync curl perl zip unzip git libxml2 libtinfo6 bzip2
           sudo update-alternatives --set fakeroot /usr/bin/fakeroot-sysv || true
 
       - name: Cache legacy Theos toolchain
@@ -50,7 +50,41 @@ jobs:
           rm -f /tmp/iPhoneOS6.1.sdk.zip
 
           test -f "$THEOS/sdks/iPhoneOS6.1.sdk/SDKSettings.plist"
-          test -x "$THEOS/toolchain/linux/iphone/bin/clang" || find "$THEOS/toolchain" -type f -name clang -print
+
+      - name: Build self-contained TLS engine for armv7
+        run: |
+          set -euxo pipefail
+          rm -rf /tmp/mbedtls
+          mkdir -p /tmp/mbedtls
+          curl -fL -o /tmp/mbedtls.tar.bz2 \
+            https://github.com/Mbed-TLS/mbedtls/releases/download/mbedtls-2.28.10/mbedtls-2.28.10.tar.bz2
+          tar -xjf /tmp/mbedtls.tar.bz2 -C /tmp/mbedtls --strip-components=1
+
+          CC="$THEOS/toolchain/linux/iphone/bin/clang"
+          AR="$THEOS/toolchain/linux/iphone/bin/ar"
+          if [ ! -x "$AR" ]; then AR="$THEOS/toolchain/linux/iphone/bin/llvm-ar"; fi
+          SDK="$THEOS/sdks/iPhoneOS6.1.sdk"
+
+          make -C /tmp/mbedtls/library -j2 \
+            CC="$CC" AR="$AR" AR_DASH= \
+            CFLAGS="-Os -fPIC -arch armv7 -isysroot $SDK -miphoneos-version-min=6.0 -Wno-deprecated-declarations"
+
+          rm -rf lyricalizer_lrclib/vendor/mbedtls
+          mkdir -p lyricalizer_lrclib/vendor/mbedtls/include lyricalizer_lrclib/vendor/mbedtls/lib
+          cp -R /tmp/mbedtls/include/mbedtls lyricalizer_lrclib/vendor/mbedtls/include/
+          cp -R /tmp/mbedtls/include/psa lyricalizer_lrclib/vendor/mbedtls/include/
+          cp /tmp/mbedtls/library/libmbedtls.a lyricalizer_lrclib/vendor/mbedtls/lib/
+          cp /tmp/mbedtls/library/libmbedx509.a lyricalizer_lrclib/vendor/mbedtls/lib/
+          cp /tmp/mbedtls/library/libmbedcrypto.a lyricalizer_lrclib/vendor/mbedtls/lib/
+
+          mkdir -p "lyricalizer_lrclib/layout/Library/Application Support/LyricalizerLRCLIB"
+          curl -fL https://curl.se/ca/cacert.pem \
+            -o "lyricalizer_lrclib/layout/Library/Application Support/LyricalizerLRCLIB/cacert.pem"
+          cp /tmp/mbedtls/LICENSE \
+            "lyricalizer_lrclib/layout/Library/Application Support/LyricalizerLRCLIB/MBEDTLS-LICENSE.txt"
+
+          file lyricalizer_lrclib/vendor/mbedtls/lib/*.a
+          wc -c "lyricalizer_lrclib/layout/Library/Application Support/LyricalizerLRCLIB/cacert.pem"
 
       - name: Build armv7 rootful deb
         working-directory: lyricalizer_lrclib
@@ -61,6 +95,6 @@ jobs:
       - name: Upload deb
         uses: actions/upload-artifact@v4
         with:
-          name: Lyricalizer-LRCLIB-iOS6
+          name: Lyricalizer-LRCLIB-iOS6-selfcontained
           path: lyricalizer_lrclib/packages/*.deb
           if-no-files-found: error
