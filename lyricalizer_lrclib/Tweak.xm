@@ -1,6 +1,7 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 #import <MediaPlayer/MediaPlayer.h>
+#import "LRHTTPS.h"
 #include <math.h>
 
 @interface MPAVItem : NSObject
@@ -18,7 +19,7 @@
 @end
 
 static NSString * const LYCachePath = @"/var/mobile/Library/Preferences/com.ac3xx.lyricalizer.lrclib.cache.plist";
-static NSString * const LYUserAgent = @"Lyricalizer-LRCLIB/1.0 (iOS 6 jailbreak community port; https://github.com/ac3xx/Lyricalizer)";
+static NSString * const LYUserAgent = @"Lyricalizer-LRCLIB/2.0 (iOS 6 jailbreak community port; https://github.com/ac3xx/Lyricalizer)";
 
 static NSMutableDictionary *LYCache = nil;
 static NSMutableSet *LYInflight = nil;
@@ -76,62 +77,37 @@ static NSString *LYCachedLyricsForKey(NSString *key) {
 }
 
 static NSDictionary *LYJSONObjectForURL(NSString *urlString, NSInteger *statusCode) {
-    NSURL *url = [NSURL URLWithString:urlString];
-    if (!url) return nil;
-
-    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url
-                                                          cachePolicy:NSURLRequestReloadIgnoringLocalCacheData
-                                                      timeoutInterval:15.0];
-    [request setValue:LYUserAgent forHTTPHeaderField:@"User-Agent"];
-    [request setValue:LYUserAgent forHTTPHeaderField:@"Lrclib-Client"];
-    [request setValue:@"application/json" forHTTPHeaderField:@"Accept"];
-
-    NSHTTPURLResponse *response = nil;
-    NSError *networkError = nil;
-    NSData *data = [NSURLConnection sendSynchronousRequest:request
-                                         returningResponse:&response
-                                                     error:&networkError];
-
-    if (statusCode) *statusCode = response ? [response statusCode] : 0;
-    if (!data || networkError) {
-        NSLog(@"[Lyricalizer LRCLIB] request failed: %@", networkError);
+    NSString *networkError = nil;
+    NSData *data = LYHTTPSDataForURL(urlString, LYUserAgent, statusCode, &networkError);
+    if (!data) {
+        if (networkError) NSLog(@"[Lyricalizer LRCLIB] %@", networkError);
         return nil;
     }
 
     NSError *jsonError = nil;
     id object = [NSJSONSerialization JSONObjectWithData:data options:0 error:&jsonError];
     if (jsonError || ![object isKindOfClass:[NSDictionary class]]) {
+        NSLog(@"[Lyricalizer LRCLIB] JSON dictionary parse failed: %@", jsonError);
         return nil;
     }
     return (NSDictionary *)object;
 }
 
 static id LYJSONAnyForURL(NSString *urlString, NSInteger *statusCode) {
-    NSURL *url = [NSURL URLWithString:urlString];
-    if (!url) return nil;
-
-    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url
-                                                          cachePolicy:NSURLRequestReloadIgnoringLocalCacheData
-                                                      timeoutInterval:15.0];
-    [request setValue:LYUserAgent forHTTPHeaderField:@"User-Agent"];
-    [request setValue:LYUserAgent forHTTPHeaderField:@"Lrclib-Client"];
-    [request setValue:@"application/json" forHTTPHeaderField:@"Accept"];
-
-    NSHTTPURLResponse *response = nil;
-    NSError *networkError = nil;
-    NSData *data = [NSURLConnection sendSynchronousRequest:request
-                                         returningResponse:&response
-                                                     error:&networkError];
-
-    if (statusCode) *statusCode = response ? [response statusCode] : 0;
-    if (!data || networkError) {
-        NSLog(@"[Lyricalizer LRCLIB] request failed: %@", networkError);
+    NSString *networkError = nil;
+    NSData *data = LYHTTPSDataForURL(urlString, LYUserAgent, statusCode, &networkError);
+    if (!data) {
+        if (networkError) NSLog(@"[Lyricalizer LRCLIB] %@", networkError);
         return nil;
     }
 
     NSError *jsonError = nil;
     id object = [NSJSONSerialization JSONObjectWithData:data options:0 error:&jsonError];
-    return jsonError ? nil : object;
+    if (jsonError) {
+        NSLog(@"[Lyricalizer LRCLIB] JSON parse failed: %@", jsonError);
+        return nil;
+    }
+    return object;
 }
 
 static NSString *LYPlainFromSynced(NSString *synced) {
