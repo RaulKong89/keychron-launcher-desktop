@@ -1,8 +1,8 @@
 Package: com.ac3xx.lyricalizer
 Name: Lyricalizer LRCLIB
-Version: 1.4.2-lrclib1
+Version: 1.4.2-lrclib2
 Architecture: iphoneos-arm
-Description: Automatic lyric fetching in the classic Music app using the modern community LRCLIB API. iOS 5/6 compatible build; preserves embedded lyrics and caches fetched lyrics offline.
+Description: Automatic lyric fetching in the classic Music app using LRCLIB, with a self-contained modern TLS 1.2 client and bundled CA roots. No TLSFix or certificate profile required.
 Maintainer: RaulKong89 community port
 Author: ac3xx (original Lyricalizer), LRCLIB community backend
 Section: Tweaks
