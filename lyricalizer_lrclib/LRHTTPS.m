@@ -152,7 +152,7 @@ NSData *LYHTTPSDataForURL(NSString *urlString,
     }
 
     struct timeval timeout;
-    timeout.tv_sec = 15;
+    timeout.tv_sec = 8;
     timeout.tv_usec = 0;
     setsockopt(server.fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
     setsockopt(server.fd, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
@@ -266,7 +266,7 @@ NSData *LYHTTPSDataForURL(NSString *urlString,
     if (httpStatus >= 200 && httpStatus < 300) {
         result = [body retain];
     } else {
-        failure = [NSString stringWithFormat:@"LRCLIB HTTP %ld", (long)httpStatus];
+        failure = [NSString stringWithFormat:@"HTTP %ld", (long)httpStatus];
     }
 
 cleanup:
