@@ -6,7 +6,9 @@ extern "C" {
 
 NSData *LYHTTPSDataForURL(NSString *urlString,
                           NSString *userAgent,
+                          NSString *acceptHeader,
                           NSInteger *statusCode,
+                          NSInteger *retryAfterSeconds,
                           NSString **errorString);
 
 #ifdef __cplusplus
