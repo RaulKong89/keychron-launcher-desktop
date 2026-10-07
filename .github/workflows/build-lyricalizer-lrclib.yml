@@ -61,13 +61,12 @@ jobs:
           tar -xjf /tmp/mbedtls.tar.bz2 -C /tmp/mbedtls --strip-components=1
 
           CC="$THEOS/toolchain/linux/iphone/bin/clang"
-          AR="$THEOS/toolchain/linux/iphone/bin/ar"
-          if [ ! -x "$AR" ]; then AR="$THEOS/toolchain/linux/iphone/bin/llvm-ar"; fi
+          AR="/usr/bin/ar"
           SDK="$THEOS/sdks/iPhoneOS6.1.sdk"
 
           make -C /tmp/mbedtls/library -j2 \
             CC="$CC" AR="$AR" AR_DASH= \
-            CFLAGS="-Os -fPIC -arch armv7 -isysroot $SDK -miphoneos-version-min=6.0 -Wno-deprecated-declarations"
+            CFLAGS="-Os -fPIC -target armv7-apple-ios6.0 -isysroot $SDK -Wno-deprecated-declarations"
 
           rm -rf lyricalizer_lrclib/vendor/mbedtls
           mkdir -p lyricalizer_lrclib/vendor/mbedtls/include lyricalizer_lrclib/vendor/mbedtls/lib
