@@ -61,7 +61,7 @@ jobs:
           tar -xjf /tmp/mbedtls.tar.bz2 -C /tmp/mbedtls --strip-components=1
 
           CC="$THEOS/toolchain/linux/iphone/bin/clang"
-          AR="/usr/bin/ar"
+          AR="/bin/true"
           SDK="$THEOS/sdks/iPhoneOS6.1.sdk"
 
           make -C /tmp/mbedtls/library -j2 \
@@ -69,12 +69,13 @@ jobs:
             CFLAGS="-Os -fPIC -target armv7-apple-ios6.0 -isysroot $SDK -Wno-deprecated-declarations"
 
           rm -rf lyricalizer_lrclib/vendor/mbedtls
-          mkdir -p lyricalizer_lrclib/vendor/mbedtls/include lyricalizer_lrclib/vendor/mbedtls/lib
+          mkdir -p lyricalizer_lrclib/vendor/mbedtls/include lyricalizer_lrclib/vendor/mbedtls/obj
           cp -R /tmp/mbedtls/include/mbedtls lyricalizer_lrclib/vendor/mbedtls/include/
           cp -R /tmp/mbedtls/include/psa lyricalizer_lrclib/vendor/mbedtls/include/
-          cp /tmp/mbedtls/library/libmbedtls.a lyricalizer_lrclib/vendor/mbedtls/lib/
-          cp /tmp/mbedtls/library/libmbedx509.a lyricalizer_lrclib/vendor/mbedtls/lib/
-          cp /tmp/mbedtls/library/libmbedcrypto.a lyricalizer_lrclib/vendor/mbedtls/lib/
+          cp /tmp/mbedtls/library/*.o lyricalizer_lrclib/vendor/mbedtls/obj/
+          find /tmp/mbedtls/3rdparty -type f -name '*.o' -exec cp {} lyricalizer_lrclib/vendor/mbedtls/obj/ \;
+          file lyricalizer_lrclib/vendor/mbedtls/obj/aes.o
+          file lyricalizer_lrclib/vendor/mbedtls/obj/ssl_tls.o
 
           mkdir -p "lyricalizer_lrclib/layout/Library/Application Support/LyricalizerLRCLIB"
           curl -fL https://curl.se/ca/cacert.pem \
@@ -82,7 +83,7 @@ jobs:
           cp /tmp/mbedtls/LICENSE \
             "lyricalizer_lrclib/layout/Library/Application Support/LyricalizerLRCLIB/MBEDTLS-LICENSE.txt"
 
-          file lyricalizer_lrclib/vendor/mbedtls/lib/*.a
+          echo "mbedTLS object count: $(find lyricalizer_lrclib/vendor/mbedtls/obj -type f -name '*.o' | wc -l)"
           wc -c "lyricalizer_lrclib/layout/Library/Application Support/LyricalizerLRCLIB/cacert.pem"
 
       - name: Build armv7 rootful deb
