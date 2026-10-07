@@ -3,13 +3,13 @@ name: Build Lyricalizer LRCLIB iOS 6
 on:
   push:
     branches:
-      - lyricalizer-lrclib-build
+      - lyricalizer-lrclib-v2-build
     paths:
       - 'lyricalizer_lrclib/**'
       - '.github/workflows/build-lyricalizer-lrclib.yml'
 
 concurrency:
-  group: lyricalizer-lrclib-ios6
+  group: lyricalizer-lrclib-ios6-v2
   cancel-in-progress: true
 
 jobs:
