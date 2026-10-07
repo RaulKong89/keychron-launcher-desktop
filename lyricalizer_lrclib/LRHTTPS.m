@@ -68,9 +68,12 @@ static BOOL LYHeaderContains(NSString *headers, NSString *needle) {
 
 NSData *LYHTTPSDataForURL(NSString *urlString,
                           NSString *userAgent,
+                          NSString *acceptHeader,
                           NSInteger *statusCode,
+                          NSInteger *retryAfterSeconds,
                           NSString **errorString) {
     if (statusCode) *statusCode = 0;
+    if (retryAfterSeconds) *retryAfterSeconds = 0;
     if (errorString) *errorString = nil;
 
     NSURL *url = [NSURL URLWithString:urlString];
@@ -177,16 +180,17 @@ NSData *LYHTTPSDataForURL(NSString *urlString,
         goto cleanup;
     }
 
-    NSString *ua = [userAgent length] ? userAgent : @"Lyricalizer-LRCLIB/2.0";
+    NSString *ua = [userAgent length] ? userAgent : @"Lyricalizer-LRCLIB/4.0";
+    NSString *accept = [acceptHeader length] ? acceptHeader : @"application/json, text/plain;q=0.9, */*;q=0.1";
     NSString *requestString = [NSString stringWithFormat:
         @"GET %@ HTTP/1.1\r\n"
          "Host: %@\r\n"
          "User-Agent: %@\r\n"
          "Lrclib-Client: %@\r\n"
-         "Accept: application/json\r\n"
+         "Accept: %@\r\n"
          "Accept-Encoding: identity\r\n"
          "Connection: close\r\n\r\n",
-        path, host, ua, ua];
+        path, host, ua, ua, accept];
 
     NSData *requestData = [requestString dataUsingEncoding:NSUTF8StringEncoding];
     const unsigned char *requestBytes = (const unsigned char *)[requestData bytes];
@@ -248,6 +252,19 @@ NSData *LYHTTPSDataForURL(NSString *urlString,
     NSArray *statusParts = [[lines objectAtIndex:0] componentsSeparatedByString:@" "];
     NSInteger httpStatus = ([statusParts count] >= 2) ? [[statusParts objectAtIndex:1] integerValue] : 0;
     if (statusCode) *statusCode = httpStatus;
+
+    if (retryAfterSeconds) {
+        for (NSString *line in lines) {
+            NSRange colon = [line rangeOfString:@":"];
+            if (colon.location == NSNotFound) continue;
+            NSString *name = [[line substringToIndex:colon.location] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
+            if ([name caseInsensitiveCompare:@"Retry-After"] != NSOrderedSame) continue;
+            NSString *value = [[line substringFromIndex:colon.location + 1] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
+            NSInteger seconds = [value integerValue];
+            if (seconds > 0 && seconds <= 60) *retryAfterSeconds = seconds;
+            break;
+        }
+    }
 
     NSUInteger bodyStart = headerRange.location + headerRange.length;
     NSData *body = bodyStart <= [raw length]
