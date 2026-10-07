@@ -270,12 +270,6 @@ NSData *LYHTTPSDataForURL(NSString *urlString,
     }
 
 cleanup:
-    if (ssl.state != MBEDTLS_SSL_HANDSHAKE_OVER) {
-        // Nothing special; cleanup below is enough.
-    } else {
-        mbedtls_ssl_close_notify(&ssl);
-    }
-
     mbedtls_net_free(&server);
     mbedtls_ssl_free(&ssl);
     mbedtls_ssl_config_free(&conf);
