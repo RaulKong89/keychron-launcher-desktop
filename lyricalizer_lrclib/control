@@ -1,8 +1,8 @@
 Package: com.ac3xx.lyricalizer
 Name: Lyricalizer LRCLIB
-Version: 1.4.2-lrclib3
+Version: 1.4.2-lrclib4
 Architecture: iphoneos-arm
-Description: Lyricalizer for iOS 6 with LRCLIB, direct live MusicLyricsView updates, multiple lyric-source fallbacks, bundled TLS 1.2 and CA roots. No TLSFix required.
+Description: Automatic lyrics for iOS 6: silent prefetch, LRCLIB exact/fuzzy matching, lyrics.ovh multi-source fallback, LrcAPI fallback, positive/negative cache, rate-limit handling, bundled TLS 1.2 and CA roots. Tracks with no lyrics leave the normal artwork untouched.
 Maintainer: RaulKong89 community port
 Author: ac3xx (original Lyricalizer), LRCLIB community backend
 Section: Tweaks
