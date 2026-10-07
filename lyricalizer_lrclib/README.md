@@ -1,29 +1,48 @@
-# Lyricalizer LRCLIB — iOS 5/6
+# Lyricalizer LRCLIB v4 — iOS 6 / armv7
 
-Community rebuild of the classic Lyricalizer behavior for legacy iOS.
+A modern, self-contained community rebuild of the classic Lyricalizer behavior for the iOS 6 Music app.
 
-- Targets rootful armv7 (iPhone 4S / iOS 6.1.3 included).
-- Uses the current LRCLIB API directly.
-- Exact lookup uses title + artist + album + duration, then relaxes the query.
-- Falls back to LRCLIB search and picks the closest metadata match.
-- Prefers plain lyrics; converts synced LRC to plain text when needed.
-- Keeps embedded lyrics untouched.
-- Caches fetched lyrics at:
-  /var/mobile/Library/Preferences/com.ac3xx.lyricalizer.lrclib.cache.plist
-- No API key required.
+## Behavior
 
-## Use
+- Preserves embedded lyrics already present in the media file.
+- Silently prefetches missing lyrics when a track becomes Now Playing.
+- Tapping artwork only opens the classic MusicLyricsView when real lyrics exist.
+- There is **no** "Downloading...", "Searching...", "No lyrics found", or empty lyric overlay.
+- If all sources confirm no lyrics, the normal album artwork remains untouched.
+- Confirmed misses are cached for 12 hours, then retried because community databases can gain lyrics later.
+- Successful lyrics are cached locally for offline use.
 
-Install the .deb, respring (or kill/relaunch Music), play a track, then tap the album artwork.
-The tweak begins fetching as soon as the Now Playing content is prepared. If the first tap happens before the network request finishes, the stock lyrics sheet shows a short downloading message; tap the artwork again after a moment.
+## Search order
 
-## Network note
+1. LRCLIB exact signature: title + artist + album + duration.
+2. LRCLIB exact title + artist without edition-specific album/duration.
+3. LRCLIB structured search.
+4. LRCLIB free-text search.
+5. lyrics.ovh — a community multi-source aggregator.
+6. Public LrcAPI advanced search as a last resort, accepted only when title and artist safely match.
 
-LRCLIB is HTTPS-only. iOS 6 must have working modern HTTPS/TLS/root certificates. If the device can already open modern HTTPS sites through its legacy TLS fixes, no additional server is needed.
+Requests are sequential, LRCLIB calls are throttled, and HTTP 429/503 Retry-After is honored.
 
-## Credits / license
+## Networking
+
+The package includes its own armv7 mbedTLS TLS 1.2 client and current CA bundle. It does not require TLSFix or a separately installed certificate profile for lyric requests.
+
+## Compatibility
+
+- Rootful jailbreak
+- armv7
+- iOS 6 target / iOS 6.1 SDK build
+- MobileSubstrate
+- Stock Music.app / MusicLyricsView behavior
+
+## Cache files
+
+- Positive lyrics: `/var/mobile/Library/Preferences/com.ac3xx.lyricalizer.lrclib.cache.plist`
+- Confirmed misses: `/var/mobile/Library/Preferences/com.ac3xx.lyricalizer.lrclib.miss.plist`
+
+Experimental placeholder/error strings from earlier builds are purged automatically on first launch.
+
+## Credits
 
 Original Lyricalizer by ac3xx / James Long.
-Original source: https://github.com/ac3xx/Lyricalizer
-This port is non-commercial and keeps attribution to the original project.
-LRCLIB: https://lrclib.net/
+LRCLIB community, lyrics.ovh community, LrcAPI community.
