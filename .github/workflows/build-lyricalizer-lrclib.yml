@@ -3,13 +3,13 @@ name: Build Lyricalizer LRCLIB iOS 6
 on:
   push:
     branches:
-      - lyricalizer-lrclib-v2b-build
+      - lyricalizer-lrclib-v3-ui-build
     paths:
       - 'lyricalizer_lrclib/**'
       - '.github/workflows/build-lyricalizer-lrclib.yml'
 
 concurrency:
-  group: lyricalizer-lrclib-ios6-v2b
+  group: lyricalizer-lrclib-ios6-v3-ui
   cancel-in-progress: true
 
 jobs:
@@ -95,6 +95,6 @@ jobs:
       - name: Upload deb
         uses: actions/upload-artifact@v4
         with:
-          name: Lyricalizer-LRCLIB-iOS6-selfcontained
+          name: Lyricalizer-LRCLIB-iOS6-v3-livefix
           path: lyricalizer_lrclib/packages/*.deb
           if-no-files-found: error
